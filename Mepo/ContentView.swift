@@ -69,7 +69,8 @@ struct ContentView: View {
 
 // MARK: - MemoryCard
 struct MemoryCard: View {
-    let memory: MemoryItem
+    @Bindable var memory: MemoryItem
+    @State private var showingEditSheet = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -85,6 +86,16 @@ struct MemoryCard: View {
                     .padding(.vertical, 4)
                     .background(Color.accentColor.opacity(0.2))
                     .clipShape(Capsule())
+                
+                Button(action: { showingEditSheet = true }) {
+                    Image(systemName: "pencil")
+                        .font(.body.bold())
+                        .foregroundColor(.secondary)
+                        .padding(6)
+                        .background(Color.secondary.opacity(0.2))
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
             }
             
             if let lat = memory.latitude, let lot = memory.longitude, let locName = memory.locationName {
@@ -95,6 +106,13 @@ struct MemoryCard: View {
                 .frame(height: 120)
                 .cornerRadius(12)
                 .allowsHitTesting(false)
+                .onTapGesture {
+                    let coordinate = CLLocationCoordinate2D(latitude: lat, longitude: lot)
+                    let placemark = MKPlacemark(coordinate: coordinate)
+                    let mapItem = MKMapItem(placemark: placemark)
+                    mapItem.name = locName
+                    mapItem.openInMaps()
+                }
             } else if let locName = memory.locationName {
                 HStack {
                     Image(systemName: "mappin.and.ellipse")
@@ -156,6 +174,56 @@ struct MemoryCard: View {
         }
         .padding()
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .sheet(isPresented: $showingEditSheet) {
+            EditMemoryView(memory: memory)
+        }
+    }
+}
+
+// MARK: - EditMemoryView
+struct EditMemoryView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+    @Bindable var memory: MemoryItem
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Details") {
+                    TextField("Title", text: $memory.title)
+                    TextField("Category", text: $memory.category)
+                    TextEditor(text: $memory.details)
+                        .frame(minHeight: 100)
+                }
+                
+                Section("Location") {
+                    TextField("Location Name", text: Binding(
+                        get: { memory.locationName ?? "" },
+                        set: { memory.locationName = $0.isEmpty ? nil : $0 }
+                    ))
+                }
+                
+                Section("Settings") {
+                    Button("Delete Memory", role: .destructive) {
+                        modelContext.delete(memory)
+                        dismiss()
+                    }
+                }
+            }
+            .navigationTitle("Edit Memory")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #else
+            .padding(.top)
+            #endif
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
     }
 }
 
