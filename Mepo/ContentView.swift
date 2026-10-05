@@ -19,6 +19,7 @@ struct ContentView: View {
     @State private var showingSettingsSheet = false
     @State private var searchText = ""
     @State private var locationManager = LocationManager()
+    @AppStorage("appTheme") private var appTheme = AppTheme.system
     
     var nearbyMemory: MemoryItem? {
         guard let currentLoc = locationManager.location else { return nil }
@@ -127,6 +128,7 @@ struct ContentView: View {
                 SettingsView()
             }
         }
+        .preferredColorScheme(appTheme.colorScheme)
     }
 }
 

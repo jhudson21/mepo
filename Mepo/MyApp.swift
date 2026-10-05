@@ -18,12 +18,12 @@ enum AppTheme: String, CaseIterable, Identifiable {
 
 @main
 struct MyApp: App {
-    @AppStorage("appTheme") private var appTheme: AppTheme = .system
+    
     
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .preferredColorScheme(appTheme.colorScheme)
+                
         }
         .modelContainer(for: MemoryItem.self)
     }
