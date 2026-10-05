@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 import FoundationModels
 import MapKit
+import CoreLocation
 import PhotosUI
 #if canImport(UIKit)
 import UIKit
@@ -17,6 +18,18 @@ struct ContentView: View {
     @State private var showingAddSheet = false
     @State private var showingSettingsSheet = false
     @State private var searchText = ""
+    @State private var locationManager = LocationManager()
+    
+    var nearbyMemory: MemoryItem? {
+        guard let currentLoc = locationManager.location else { return nil }
+        // Find the first memory within ~200 meters
+        return memories.first { memory in
+            guard let lat = memory.latitude, let lot = memory.longitude else { return false }
+            let memLoc = CLLocation(latitude: lat, longitude: lot)
+            let distance = currentLoc.distance(from: memLoc)
+            return distance < 200
+        }
+    }
     
     var filteredMemories: [MemoryItem] {
         if searchText.trimmingCharacters(in: .whitespaces).isEmpty {
@@ -46,8 +59,30 @@ struct ContentView: View {
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 16) {
+                            if let hero = nearbyMemory, searchText.trimmingCharacters(in: .whitespaces).isEmpty {
+                                VStack(alignment: .leading, spacing: 5) {
+                                    HStack {
+                                        Image(systemName: "location.fill")
+                                        Text("Nearby Memory")
+                                    }
+                                    .font(.subheadline.bold())
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal)
+                                    
+                                    MemoryCard(memory: hero)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 16)
+                                                .stroke(Color.white.opacity(0.8), lineWidth: 3)
+                                        )
+                                }
+                                .padding(.top, 4)
+                                .padding(.bottom, 8)
+                            }
+                            
                             ForEach(filteredMemories) { memory in
-                                MemoryCard(memory: memory)
+                                if memory.id != nearbyMemory?.id || !searchText.trimmingCharacters(in: .whitespaces).isEmpty {
+                                    MemoryCard(memory: memory)
+                                }
                             }
                         }
                         .padding()
