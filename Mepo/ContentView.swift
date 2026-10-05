@@ -62,9 +62,14 @@ struct ContentView: View {
             .searchable(text: $searchText, prompt: "Search memories...")
             .toolbar {
                 #if os(iOS)
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItemGroup(placement: .bottomBar) {
                     Button(action: { showingSettingsSheet = true }) {
                         Image(systemName: "gear")
+                    }
+                    Spacer()
+                    // Replaced "plus" with "square.and.pencil" which is the standard Apple "Compose" icon
+                    Button(action: { showingAddSheet = true }) {
+                        Image(systemName: "square.and.pencil")
                     }
                 }
                 #else
@@ -73,13 +78,12 @@ struct ContentView: View {
                         Image(systemName: "gear")
                     }
                 }
-                #endif
-                
                 ToolbarItem(placement: .primaryAction) {
                     Button(action: { showingAddSheet = true }) {
-                        Image(systemName: "plus")
+                        Image(systemName: "square.and.pencil")
                     }
                 }
+                #endif
             }
             .sheet(isPresented: $showingAddSheet) {
                 AddMemoryView()
