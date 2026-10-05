@@ -23,20 +23,13 @@ struct ContentView: View {
                     .ignoresSafeArea()
                 
                 if memories.isEmpty {
-                    VStack {
-                        Spacer()
-                        Image(systemName: "tray.fill")
-                            .font(.system(size: 60))
-                            .foregroundColor(.white.opacity(0.7))
-                            .glassEffect(.regular, in: Circle())
-                            .padding()
-                        Text("No Memories Yet")
-                            .font(.title3.bold())
-                            .foregroundColor(.white)
-                        Text("Tap the + button to add one.")
-                            .foregroundColor(.white.opacity(0.8))
-                        Spacer()
-                    }
+                    ContentUnavailableView(
+                        "No Memories Yet",
+                        systemImage: "tray.fill",
+                        description: Text("Tap the + button to add one.")
+                    )
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16))
+                    .padding()
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 16) {
@@ -69,6 +62,7 @@ struct ContentView: View {
 
 // MARK: - MemoryCard
 struct MemoryCard: View {
+    @Environment(\.modelContext) private var modelContext
     @Bindable var memory: MemoryItem
     @State private var showingEditSheet = false
     
@@ -86,16 +80,6 @@ struct MemoryCard: View {
                     .padding(.vertical, 4)
                     .background(Color.accentColor.opacity(0.2))
                     .clipShape(Capsule())
-                
-                Button(action: { showingEditSheet = true }) {
-                    Image(systemName: "pencil")
-                        .font(.body.bold())
-                        .foregroundColor(.secondary)
-                        .padding(6)
-                        .background(Color.secondary.opacity(0.2))
-                        .clipShape(Circle())
-                }
-                .buttonStyle(.plain)
             }
             
             if let lat = memory.latitude, let lot = memory.longitude, let locName = memory.locationName {
@@ -174,6 +158,19 @@ struct MemoryCard: View {
         }
         .padding()
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .contextMenu {
+            Button {
+                showingEditSheet = true
+            } label: {
+                Label("Edit Memory", systemImage: "pencil")
+            }
+            
+            Button(role: .destructive) {
+                modelContext.delete(memory)
+            } label: {
+                Label("Delete Memory", systemImage: "trash")
+            }
+        }
         .sheet(isPresented: $showingEditSheet) {
             EditMemoryView(memory: memory)
         }
@@ -182,7 +179,6 @@ struct MemoryCard: View {
 
 // MARK: - EditMemoryView
 struct EditMemoryView: View {
-    @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Bindable var memory: MemoryItem
     
@@ -201,13 +197,6 @@ struct EditMemoryView: View {
                         get: { memory.locationName ?? "" },
                         set: { memory.locationName = $0.isEmpty ? nil : $0 }
                     ))
-                }
-                
-                Section("Settings") {
-                    Button("Delete Memory", role: .destructive) {
-                        modelContext.delete(memory)
-                        dismiss()
-                    }
                 }
             }
             .navigationTitle("Edit Memory")
