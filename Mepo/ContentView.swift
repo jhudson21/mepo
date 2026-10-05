@@ -15,14 +15,25 @@ struct ContentView: View {
     @Query(sort: \MemoryItem.createdAt, order: .reverse) private var memories: [MemoryItem]
     
     @State private var showingAddSheet = false
+    @State private var showingSettingsSheet = false
+    @State private var searchText = ""
+    
+    var filteredMemories: [MemoryItem] {
+        if searchText.trimmingCharacters(in: .whitespaces).isEmpty {
+            return memories
+        }
+        return memories.filter { memory in
+            memory.title.localizedCaseInsensitiveContains(searchText) ||
+            memory.details.localizedCaseInsensitiveContains(searchText) ||
+            memory.category.localizedCaseInsensitiveContains(searchText) ||
+            (memory.locationName?.localizedCaseInsensitiveContains(searchText) ?? false)
+        }
+    }
 
     var body: some View {
         NavigationStack {
-            ZStack(alignment: .bottom) {
-                LinearGradient(colors: [.blue.opacity(0.4), .purple.opacity(0.4)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                    .ignoresSafeArea()
-                
-                if memories.isEmpty {
+            Group {
+                if memories.isEmpty && searchText.isEmpty {
                     ContentUnavailableView(
                         "No Memories Yet",
                         systemImage: "tray.fill",
@@ -30,31 +41,85 @@ struct ContentView: View {
                     )
                     .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16))
                     .padding()
+                } else if filteredMemories.isEmpty {
+                    ContentUnavailableView.search(text: searchText)
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 16) {
-                            ForEach(memories) { memory in
+                            ForEach(filteredMemories) { memory in
                                 MemoryCard(memory: memory)
                             }
-                            Color.clear.frame(height: 100)
                         }
                         .padding()
                     }
                 }
-                
-                Button(action: { showingAddSheet = true }) {
-                    Image(systemName: "plus")
-                        .font(.title.bold())
-                        .foregroundColor(.white)
-                        .padding(24)
-                        .glassEffect(.regular, in: Circle())
-                }
-                .buttonStyle(.plain)
-                .padding(.bottom, 24)
+            }
+            .background {
+                LinearGradient(colors: [.blue.opacity(0.4), .purple.opacity(0.4)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                    .ignoresSafeArea()
             }
             .navigationTitle("Mepo")
+            .searchable(text: $searchText, prompt: "Search memories...")
+            .toolbar {
+                #if os(iOS)
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: { showingSettingsSheet = true }) {
+                        Image(systemName: "gear")
+                    }
+                }
+                #else
+                ToolbarItem(placement: .automatic) {
+                    Button(action: { showingSettingsSheet = true }) {
+                        Image(systemName: "gear")
+                    }
+                }
+                #endif
+                
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: { showingAddSheet = true }) {
+                        Image(systemName: "plus")
+                    }
+                }
+            }
             .sheet(isPresented: $showingAddSheet) {
                 AddMemoryView()
+            }
+            .sheet(isPresented: $showingSettingsSheet) {
+                SettingsView()
+            }
+        }
+    }
+}
+
+// MARK: - SettingsView
+struct SettingsView: View {
+    @Environment(\.dismiss) private var dismiss
+    @AppStorage("appTheme") private var appTheme = AppTheme.system
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section(header: Text("Appearance")) {
+                    Picker("Theme", selection: $appTheme) {
+                        ForEach(AppTheme.allCases) { theme in
+                            Text(theme.rawValue).tag(theme)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
+            }
+            .navigationTitle("Settings")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #else
+            .padding(.top)
+            #endif
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
             }
         }
     }
@@ -166,7 +231,9 @@ struct MemoryCard: View {
             }
             
             Button(role: .destructive) {
-                modelContext.delete(memory)
+                let context = memory.modelContext
+                context?.delete(memory)
+                try? context?.save()
             } label: {
                 Label("Delete Memory", systemImage: "trash")
             }
