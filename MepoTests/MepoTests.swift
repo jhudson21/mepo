@@ -321,4 +321,26 @@ import SwiftData
         let totalMems = try context.fetch(FetchDescriptor<MemoryItem>())
         #expect(totalMems.count == 1)
     }
+
+    // MARK: - 9. Sample Data Loader Tests
+    @Test @MainActor func sampleDataLoaderPopulation() throws {
+        let schema = Schema([MemoryItem.self, ReminderItem.self])
+        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+        let container = try ModelContainer(for: schema, configurations: [config])
+        let context = container.mainContext
+        
+        SampleDataLoader.loadSampleData(into: context)
+        
+        let mems = try context.fetch(FetchDescriptor<MemoryItem>())
+        #expect(mems.count == 4)
+        #expect(mems.contains { $0.title == "Circolo Popolare" })
+        #expect(mems.contains { $0.title == "Monmouth Coffee Company" })
+        #expect(mems.contains { $0.title == "Daunt Books" })
+        #expect(mems.contains { $0.title == "Tate Modern & River Walk" })
+        
+        let rems = try context.fetch(FetchDescriptor<ReminderItem>())
+        #expect(rems.count == 4)
+        #expect(rems.contains { $0.isImportant && $0.locationName != nil })
+        #expect(rems.contains { $0.isCompleted })
+    }
 }

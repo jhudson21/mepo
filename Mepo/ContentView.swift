@@ -14,10 +14,12 @@ import AppKit
 // MARK: - Root ContentView (Tab Navigation)
 struct ContentView: View {
     @AppStorage("appTheme") private var appTheme = AppTheme.system
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
     @State private var selectedTab: Int = 0
     @State private var quickActionManager = QuickActionManager.shared
     @State private var showingQuickAddMemory = false
     @State private var showingQuickAddReminder = false
+    @State private var showingOnboardingSheet = false
     
     @Query(sort: \ReminderItem.createdAt, order: .reverse) private var allReminders: [ReminderItem]
     @Query(sort: \MemoryItem.createdAt, order: .reverse) private var allMemories: [MemoryItem]
@@ -36,6 +38,9 @@ struct ContentView: View {
         .preferredColorScheme(appTheme.colorScheme)
         .onAppear {
             syncWidgets()
+            if !hasCompletedOnboarding {
+                showingOnboardingSheet = true
+            }
             if let action = quickActionManager.activeAction {
                 handleQuickAction(action)
             }
@@ -50,6 +55,10 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showingQuickAddReminder) {
             AddReminderSheet()
+        }
+        .sheet(isPresented: $showingOnboardingSheet) {
+            WelcomeOnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)
+                .interactiveDismissDisabled(!hasCompletedOnboarding)
         }
         .onChange(of: allReminders) {
             syncWidgets()
@@ -852,6 +861,9 @@ struct SettingsView: View {
     @State private var showingImportSuccessAlert = false
     @State private var importErrorMessage: String? = nil
     @State private var showingImportErrorAlert = false
+    @State private var showingSampleDataAlert = false
+    @State private var showingWelcomeTourSheet = false
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
     
     var body: some View {
         NavigationStack {
@@ -883,6 +895,32 @@ struct SettingsView: View {
                     } label: {
                         HStack {
                             Label("Import & Restore Backup", systemImage: "square.and.arrow.down")
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    
+                    Button {
+                        SampleDataLoader.loadSampleData(into: modelContext)
+                        showingSampleDataAlert = true
+                    } label: {
+                        HStack {
+                            Label("Load Curated Sample Data", systemImage: "sparkles")
+                                .foregroundColor(.purple)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    
+                    Button {
+                        showingWelcomeTourSheet = true
+                    } label: {
+                        HStack {
+                            Label("Welcome & Feature Tour", systemImage: "hand.wave")
                             Spacer()
                             Image(systemName: "chevron.right")
                                 .font(.caption)
@@ -959,6 +997,14 @@ struct SettingsView: View {
                 Button("OK", role: .cancel) { }
             } message: {
                 Text(importErrorMessage ?? "Unable to read or parse the selected backup file.")
+            }
+            .sheet(isPresented: $showingWelcomeTourSheet) {
+                WelcomeOnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)
+            }
+            .alert("Sample Data Loaded", isPresented: $showingSampleDataAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text("Sample memories and reminders have been loaded. Widgets and search indexes have been updated.")
             }
         }
     }
