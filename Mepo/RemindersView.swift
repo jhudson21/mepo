@@ -518,11 +518,19 @@ struct ReminderDetailPane: View {
                             center: CLLocationCoordinate2D(latitude: lat, longitude: lon),
                             span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
                         ))
-                        Map(position: .constant(position)) {
-                            Marker(locName, coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lon))
+                        Button {
+                            let loc = CLLocation(latitude: lat, longitude: lon)
+                            let mapItem = MKMapItem(location: loc, address: nil)
+                            mapItem.name = locName
+                            mapItem.openInMaps()
+                        } label: {
+                            Map(position: .constant(position)) {
+                                Marker(locName, coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lon))
+                            }
+                            .frame(height: 160)
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                         }
-                        .frame(height: 160)
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .buttonStyle(.plain)
                         
                         Button {
                             let loc = CLLocation(latitude: lat, longitude: lon)

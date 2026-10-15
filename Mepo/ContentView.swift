@@ -703,11 +703,19 @@ struct MemoryDetailPane: View {
                         }
                         
                         let position = MapCameraPosition.region(MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: lat, longitude: lot), span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)))
-                        Map(position: .constant(position)) {
-                            Marker(locName, coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lot))
+                        Button {
+                            let location = CLLocation(latitude: lat, longitude: lot)
+                            let mapItem = MKMapItem(location: location, address: nil)
+                            mapItem.name = locName
+                            mapItem.openInMaps()
+                        } label: {
+                            Map(position: .constant(position)) {
+                                Marker(locName, coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lot))
+                            }
+                            .frame(height: 160)
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                         }
-                        .frame(height: 160)
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .buttonStyle(.plain)
                         
                         HStack(spacing: 12) {
                             Button {
@@ -1201,18 +1209,19 @@ struct MemoryCard: View {
             
             if let lat = memory.latitude, let lot = memory.longitude, let locName = memory.locationName {
                 let position = MapCameraPosition.region(MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: lat, longitude: lot), span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)))
-                Map(position: .constant(position)) {
-                    Marker(locName, coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lot))
-                }
-                .frame(height: 120)
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .allowsHitTesting(false)
-                .onTapGesture {
+                Button {
                     let location = CLLocation(latitude: lat, longitude: lot)
                     let mapItem = MKMapItem(location: location, address: nil)
                     mapItem.name = locName
                     mapItem.openInMaps()
+                } label: {
+                    Map(position: .constant(position)) {
+                        Marker(locName, coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lot))
+                    }
+                    .frame(height: 120)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 }
+                .buttonStyle(.plain)
             } else if let locName = memory.locationName {
                 HStack {
                     Image(systemName: "mappin.and.ellipse")
