@@ -252,17 +252,19 @@ struct RemindersWidget: Widget {
 // MARK: - Memories Timeline Provider
 struct MemoriesTimelineProvider: TimelineProvider {
     func placeholder(in context: Context) -> MemoriesEntry {
-        MemoriesEntry(date: Date(), memory: MepoWidgetStore.shared.load().latestMemory)
+        let payload = MepoWidgetStore.shared.load()
+        return MemoriesEntry(date: Date(), memory: payload.latestMemory, recentMemories: payload.recentMemories)
     }
 
     func getSnapshot(in context: Context, completion: @escaping (MemoriesEntry) -> Void) {
-        let entry = MemoriesEntry(date: Date(), memory: MepoWidgetStore.shared.load().latestMemory)
+        let payload = MepoWidgetStore.shared.load()
+        let entry = MemoriesEntry(date: Date(), memory: payload.latestMemory, recentMemories: payload.recentMemories)
         completion(entry)
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<MemoriesEntry>) -> Void) {
         let payload = MepoWidgetStore.shared.load()
-        let entry = MemoriesEntry(date: Date(), memory: payload.latestMemory)
+        let entry = MemoriesEntry(date: Date(), memory: payload.latestMemory, recentMemories: payload.recentMemories)
         let nextUpdate = Calendar.current.date(byAdding: .hour, value: 1, to: Date()) ?? Date()
         let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
         completion(timeline)
@@ -272,6 +274,7 @@ struct MemoriesTimelineProvider: TimelineProvider {
 struct MemoriesEntry: TimelineEntry {
     let date: Date
     let memory: WidgetMemory?
+    let recentMemories: [WidgetMemory]
 }
 
 // MARK: - Memories Widget View
@@ -280,6 +283,20 @@ struct MemoriesWidgetView: View {
     var entry: MemoriesEntry
     
     var body: some View {
+        switch family {
+        case .systemSmall:
+            smallMemoriesView
+        case .systemLarge:
+            largeMemoriesView
+        case .accessoryRectangular:
+            accessoryRectangularView
+        default:
+            mediumMemoriesView
+        }
+    }
+    
+    // MARK: - Small Memories View
+    @ViewBuilder private var smallMemoriesView: some View {
         if let mem = entry.memory {
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
@@ -308,6 +325,8 @@ struct MemoriesWidgetView: View {
                     }
                 }
                 
+                Spacer()
+                
                 Text(mem.title)
                     .font(.subheadline.bold())
                     .lineLimit(2)
@@ -321,26 +340,254 @@ struct MemoriesWidgetView: View {
                     .foregroundColor(.secondary)
                     .lineLimit(1)
                 }
+            }
+        } else {
+            emptyView
+        }
+    }
+    
+    // MARK: - Medium Memories View
+    @ViewBuilder private var mediumMemoriesView: some View {
+        if let mem = entry.memory {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    HStack(spacing: 4) {
+                        Image(systemName: "sparkles")
+                            .foregroundColor(.purple)
+                        Text(mem.category)
+                            .font(.caption2.bold())
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Color.purple.opacity(0.15))
+                    .foregroundColor(.purple)
+                    .clipShape(Capsule())
+                    
+                    if let date = mem.dateText {
+                        Text(date)
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Spacer()
+                    
+                    if let score = mem.ratingScore {
+                        HStack(spacing: 3) {
+                            if let sub = mem.ratingSubject {
+                                Text(sub)
+                                    .font(.caption2.weight(.medium))
+                                    .foregroundColor(.secondary)
+                            }
+                            HStack(spacing: 1) {
+                                ForEach(1...5, id: \.self) { s in
+                                    Image(systemName: s <= score ? "star.fill" : "star")
+                                        .font(.system(size: 9))
+                                        .foregroundColor(s <= score ? .yellow : .gray.opacity(0.3))
+                                }
+                            }
+                        }
+                    }
+                }
                 
-                if family == .systemMedium {
-                    Text(mem.details)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(mem.title)
+                        .font(.headline)
+                        .lineLimit(1)
+                    
+                    if let loc = mem.locationName {
+                        HStack(spacing: 3) {
+                            Image(systemName: "mappin.and.ellipse")
+                            Text(loc)
+                        }
                         .font(.caption)
                         .foregroundColor(.secondary)
+                        .lineLimit(1)
+                    }
+                }
+                
+                if !mem.details.isEmpty {
+                    Text(mem.details)
+                        .font(.caption)
+                        .foregroundColor(.primary.opacity(0.85))
                         .lineLimit(2)
+                }
+                
+                Spacer()
+                
+                if entry.recentMemories.count > 1 {
+                    HStack {
+                        Text("+\(entry.recentMemories.count - 1) other saved places")
+                            .font(.caption2.bold())
+                            .foregroundColor(.purple)
+                        Spacer()
+                        Image(systemName: "arrow.right")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
                 }
             }
         } else {
-            VStack(spacing: 6) {
-                Image(systemName: "sparkles")
-                    .font(.title2)
-                    .foregroundColor(.purple)
-                Text("No memories yet")
-                    .font(.caption.bold())
-                Text("Add places in Mepo to remember them here.")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
+            emptyView
+        }
+    }
+    
+    // MARK: - Large Memories View (Memory Showcase)
+    @ViewBuilder private var largeMemoriesView: some View {
+        if let hero = entry.memory {
+            VStack(alignment: .leading, spacing: 10) {
+                // Header
+                HStack {
+                    HStack(spacing: 4) {
+                        Image(systemName: "sparkles")
+                            .foregroundColor(.purple)
+                        Text("MEPO SHOWCASE")
+                            .font(.caption.bold())
+                            .foregroundColor(.purple)
+                    }
+                    Spacer()
+                    Text("\(entry.recentMemories.count) Places")
+                        .font(.caption2.bold())
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.secondary.opacity(0.15))
+                        .clipShape(Capsule())
+                }
+                
+                // Hero Memory Card
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text(hero.category)
+                            .font(.caption2.bold())
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.purple.opacity(0.2))
+                            .foregroundColor(.purple)
+                            .clipShape(Capsule())
+                        
+                        Spacer()
+                        
+                        if let score = hero.ratingScore {
+                            HStack(spacing: 1) {
+                                ForEach(1...5, id: \.self) { s in
+                                    Image(systemName: s <= score ? "star.fill" : "star")
+                                        .font(.system(size: 9))
+                                        .foregroundColor(s <= score ? .yellow : .gray.opacity(0.3))
+                                }
+                            }
+                        }
+                    }
+                    
+                    Text(hero.title)
+                        .font(.headline)
+                        .lineLimit(1)
+                    
+                    if let loc = hero.locationName {
+                        HStack(spacing: 3) {
+                            Image(systemName: "mappin.and.ellipse")
+                            Text(loc)
+                        }
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                    }
+                    
+                    if !hero.details.isEmpty {
+                        Text(hero.details)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .lineLimit(2)
+                    }
+                }
+                .padding(10)
+                .background(Color.secondary.opacity(0.08))
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                
+                // Recent Highlights List
+                if entry.recentMemories.count > 1 {
+                    Text("Recent Highlights")
+                        .font(.caption.bold())
+                        .foregroundColor(.secondary)
+                    
+                    VStack(spacing: 6) {
+                        ForEach(Array(entry.recentMemories.dropFirst().prefix(3))) { item in
+                            HStack(spacing: 8) {
+                                Image(systemName: "mappin.circle.fill")
+                                    .font(.subheadline)
+                                    .foregroundColor(.purple)
+                                
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(item.title)
+                                        .font(.subheadline.bold())
+                                        .lineLimit(1)
+                                    if let loc = item.locationName {
+                                        Text(loc)
+                                            .font(.caption2)
+                                            .foregroundColor(.secondary)
+                                            .lineLimit(1)
+                                    }
+                                }
+                                
+                                Spacer()
+                                
+                                if let score = item.ratingScore {
+                                    HStack(spacing: 1) {
+                                        ForEach(1...5, id: \.self) { s in
+                                            Image(systemName: s <= score ? "star.fill" : "star")
+                                                .font(.system(size: 7))
+                                                .foregroundColor(s <= score ? .yellow : .gray.opacity(0.3))
+                                        }
+                                    }
+                                }
+                            }
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 4)
+                        }
+                    }
+                }
+                
+                Spacer()
             }
+        } else {
+            emptyView
+        }
+    }
+    
+    // MARK: - Lock Screen Accessory
+    @ViewBuilder private var accessoryRectangularView: some View {
+        if let mem = entry.memory {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 4) {
+                    Image(systemName: "sparkles")
+                    Text(mem.category)
+                        .font(.caption2.bold())
+                }
+                Text(mem.title)
+                    .font(.headline)
+                    .lineLimit(1)
+                if let loc = mem.locationName {
+                    Text(loc)
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
+            }
+        } else {
+            Text("Mepo Memories")
+                .font(.headline)
+        }
+    }
+    
+    @ViewBuilder private var emptyView: some View {
+        VStack(spacing: 6) {
+            Image(systemName: "sparkles")
+                .font(.title2)
+                .foregroundColor(.purple)
+            Text("No memories yet")
+                .font(.caption.bold())
+            Text("Add places in Mepo to showcase them here.")
+                .font(.caption2)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
         }
     }
 }
@@ -356,6 +603,6 @@ struct MemoriesWidget: Widget {
         }
         .configurationDisplayName("Recent Memories")
         .description("Discover recent places, recommendations, and ratings you logged.")
-        .supportedFamilies([.systemSmall, .systemMedium])
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge, .accessoryRectangular])
     }
 }

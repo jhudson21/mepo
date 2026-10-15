@@ -34,7 +34,13 @@ final class NotificationManager {
         
         let center = UNUserNotificationCenter.current()
         let baseId = reminder.id.uuidString
-        center.removePendingNotificationRequests(withIdentifiers: [baseId, "\(baseId)_time", "\(baseId)_location"])
+        center.removePendingNotificationRequests(withIdentifiers: [
+            baseId,
+            "\(baseId)_time",
+            "\(baseId)_location",
+            "\(baseId)_location_arrival",
+            "\(baseId)_location_departure"
+        ])
         
         // 1. Time / Calendar Trigger
         if let dueDate = reminder.dueDate {
@@ -72,32 +78,54 @@ final class NotificationManager {
             }
         }
         
-        // 2. Location Geofence Arrival Trigger
-        if let lat = reminder.latitude, let lon = reminder.longitude, reminder.notifyOnArrival {
+        // 2. Location Geofence Triggers (Arrival & Departure)
+        if let lat = reminder.latitude, let lon = reminder.longitude {
             let centerCoord = CLLocationCoordinate2D(latitude: lat, longitude: lon)
             let radius = max(reminder.radius, 100.0) // iOS requires at least 100m for reliable geofencing
-            let region = CLCircularRegion(center: centerCoord, radius: radius, identifier: "\(baseId)_region")
-            region.notifyOnEntry = true
-            region.notifyOnExit = false
+            let locName = reminder.locationName ?? "reminder location"
             
-            let trigger = UNLocationNotificationTrigger(region: region, repeats: reminder.recurrence != .none)
-            let content = UNMutableNotificationContent()
-            content.title = reminder.isImportant ? "📍 ❗ \(reminder.title)" : "📍 \(reminder.title)"
-            
-            if let locName = reminder.locationName {
-                content.body = reminder.notes.isEmpty ? "Arrived near \(locName)" : "\(locName): \(reminder.notes)"
-            } else {
-                content.body = reminder.notes.isEmpty ? "You have arrived at your reminder location." : reminder.notes
+            // Arrival Trigger
+            if reminder.notifyOnArrival {
+                let arrivalRegion = CLCircularRegion(center: centerCoord, radius: radius, identifier: "\(baseId)_region_arrival")
+                arrivalRegion.notifyOnEntry = true
+                arrivalRegion.notifyOnExit = false
+                
+                let arrivalTrigger = UNLocationNotificationTrigger(region: arrivalRegion, repeats: reminder.recurrence != .none)
+                let arrivalContent = UNMutableNotificationContent()
+                arrivalContent.title = reminder.isImportant ? "📍 ❗ \(reminder.title)" : "📍 \(reminder.title)"
+                arrivalContent.body = reminder.notes.isEmpty ? "Arrived near \(locName)" : "\(locName): \(reminder.notes)"
+                arrivalContent.sound = .default
+                
+                let arrivalRequest = UNNotificationRequest(identifier: "\(baseId)_location_arrival", content: arrivalContent, trigger: arrivalTrigger)
+                try? await center.add(arrivalRequest)
             }
-            content.sound = .default
             
-            let request = UNNotificationRequest(identifier: "\(baseId)_location", content: content, trigger: trigger)
-            try? await center.add(request)
+            // Departure Trigger
+            if reminder.notifyOnDeparture {
+                let departureRegion = CLCircularRegion(center: centerCoord, radius: radius, identifier: "\(baseId)_region_departure")
+                departureRegion.notifyOnEntry = false
+                departureRegion.notifyOnExit = true
+                
+                let departureTrigger = UNLocationNotificationTrigger(region: departureRegion, repeats: reminder.recurrence != .none)
+                let departureContent = UNMutableNotificationContent()
+                departureContent.title = reminder.isImportant ? "🚶 ❗ \(reminder.title)" : "🚶 \(reminder.title)"
+                departureContent.body = reminder.notes.isEmpty ? "Leaving \(locName)" : "\(locName): \(reminder.notes)"
+                departureContent.sound = .default
+                
+                let departureRequest = UNNotificationRequest(identifier: "\(baseId)_location_departure", content: departureContent, trigger: departureTrigger)
+                try? await center.add(departureRequest)
+            }
         }
     }
     
     func cancelNotification(for reminder: ReminderItem) {
         let baseId = reminder.id.uuidString
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [baseId, "\(baseId)_time", "\(baseId)_location"])
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [
+            baseId,
+            "\(baseId)_time",
+            "\(baseId)_location",
+            "\(baseId)_location_arrival",
+            "\(baseId)_location_departure"
+        ])
     }
 }

@@ -18,11 +18,13 @@ struct WidgetMemory: Codable, Identifiable {
     var ratingScore: Int?
     var ratingSubject: String?
     var details: String
+    var dateText: String?
 }
 
 struct WidgetPayload: Codable {
     var reminders: [WidgetReminder]
     var latestMemory: WidgetMemory?
+    var recentMemories: [WidgetMemory] = []
 }
 
 final class MepoWidgetStore {
@@ -35,8 +37,8 @@ final class MepoWidgetStore {
     
     private let payloadKey = "mepo_widget_payload"
     
-    func save(reminders: [WidgetReminder], latestMemory: WidgetMemory?) {
-        let payload = WidgetPayload(reminders: reminders, latestMemory: latestMemory)
+    func save(reminders: [WidgetReminder], latestMemory: WidgetMemory?, recentMemories: [WidgetMemory] = []) {
+        let payload = WidgetPayload(reminders: reminders, latestMemory: latestMemory, recentMemories: recentMemories)
         if let data = try? JSONEncoder().encode(payload) {
             defaults?.set(data, forKey: payloadKey)
             WidgetCenter.shared.reloadAllTimelines()
@@ -46,21 +48,47 @@ final class MepoWidgetStore {
     func load() -> WidgetPayload {
         guard let data = defaults?.data(forKey: payloadKey),
               let payload = try? JSONDecoder().decode(WidgetPayload.self, from: data) else {
-            return WidgetPayload(
-                reminders: [
-                    WidgetReminder(id: "1", title: "Pick up fresh coffee beans", isCompleted: false, isImportant: true, dueText: "Today 10:00 AM", locationName: "Monmouth Coffee"),
-                    WidgetReminder(id: "2", title: "Try seasonal sourdough pastry", isCompleted: false, isImportant: false, dueText: "Tomorrow", locationName: "Gail's Bakery"),
-                    WidgetReminder(id: "3", title: "Review weekend notes", isCompleted: true, isImportant: false, dueText: nil, locationName: nil)
-                ],
-                latestMemory: WidgetMemory(
+            let defaultMemories = [
+                WidgetMemory(
                     id: "m1",
                     title: "Dinner at Circolo Popolare",
                     category: "Food & Drink",
                     locationName: "Fitzrovia, London",
                     ratingScore: 5,
                     ratingSubject: "Truffle Pasta",
-                    details: "Incredible atmosphere and decadent carbonara served in cheese wheel."
+                    details: "Incredible atmosphere and decadent carbonara served in cheese wheel.",
+                    dateText: "Yesterday"
+                ),
+                WidgetMemory(
+                    id: "m2",
+                    title: "Flat White & Pastry",
+                    category: "Coffee & Cafes",
+                    locationName: "Monmouth Coffee, Covent Garden",
+                    ratingScore: 5,
+                    ratingSubject: "Espresso Roast",
+                    details: "Best pour-over and flat white in the city. Always busy.",
+                    dateText: "3 days ago"
+                ),
+                WidgetMemory(
+                    id: "m3",
+                    title: "Weekend Book Hunting",
+                    category: "Books & Arts",
+                    locationName: "Daunt Books, Marylebone",
+                    ratingScore: 4,
+                    ratingSubject: "Travel Section",
+                    details: "Beautiful oak galleries and skylights filled with travel literature.",
+                    dateText: "Last week"
                 )
+            ]
+            
+            return WidgetPayload(
+                reminders: [
+                    WidgetReminder(id: "1", title: "Pick up fresh coffee beans", isCompleted: false, isImportant: true, dueText: "Today 10:00 AM", locationName: "Monmouth Coffee"),
+                    WidgetReminder(id: "2", title: "Try seasonal sourdough pastry", isCompleted: false, isImportant: false, dueText: "Tomorrow", locationName: "Gail's Bakery"),
+                    WidgetReminder(id: "3", title: "Review weekend notes", isCompleted: true, isImportant: false, dueText: nil, locationName: nil)
+                ],
+                latestMemory: defaultMemories.first,
+                recentMemories: defaultMemories
             )
         }
         return payload

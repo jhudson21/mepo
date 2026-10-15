@@ -19,6 +19,9 @@ struct ExtractedReminder {
     
     @Guide(description: "A location or place name mentioned in the task, if any")
     var locationName: String?
+    
+    @Guide(description: "Whether the reminder is triggered on arrival or departure: 'arrival', 'departure', or 'none'")
+    var locationTrigger: String?
 }
 
 struct ParsedReminderResult {
@@ -30,6 +33,8 @@ struct ParsedReminderResult {
     var locationName: String?
     var latitude: Double?
     var longitude: Double?
+    var notifyOnArrival: Bool
+    var notifyOnDeparture: Bool
     var linkedMemoryTitle: String?
 }
 
@@ -46,6 +51,8 @@ enum ReminderAIParser {
                 locationName: nil,
                 latitude: nil,
                 longitude: nil,
+                notifyOnArrival: true,
+                notifyOnDeparture: false,
                 linkedMemoryTitle: nil
             )
         }
@@ -97,6 +104,11 @@ enum ReminderAIParser {
                 }
             }
             
+            let isDeparture = c.locationTrigger?.lowercased().contains("depart") == true || c.locationTrigger?.lowercased().contains("leave") == true
+            let hasLoc = lat != nil && lon != nil
+            let notifyArrival = hasLoc ? !isDeparture : true
+            let notifyDeparture = hasLoc ? isDeparture : false
+            
             return ParsedReminderResult(
                 title: c.title.isEmpty ? trimmed : c.title,
                 notes: c.notes ?? "",
@@ -106,6 +118,8 @@ enum ReminderAIParser {
                 locationName: locName,
                 latitude: lat,
                 longitude: lon,
+                notifyOnArrival: notifyArrival,
+                notifyOnDeparture: notifyDeparture,
                 linkedMemoryTitle: linkedTitle
             )
         } catch {
@@ -129,14 +143,17 @@ enum ReminderAIParser {
                 recurrence = .monthly
             }
             
-            // Check if place is mentioned after "at" (e.g. "at Gail's Bakery")
+            let isDeparture = lower.contains("when i leave") || lower.contains("leaving") || lower.contains("departing")
+            
+            // Check if place is mentioned after "at" or "leave" (e.g. "at Gail's Bakery" or "leave Gail's Bakery")
             var locName: String? = nil
             var lat: Double? = nil
             var lon: Double? = nil
             var linkedTitle: String? = nil
             
-            if let atRange = lower.range(of: " at ") {
-                let candidate = String(trimmed[atRange.upperBound...]).trimmingCharacters(in: .whitespaces)
+            let searchMarker = isDeparture ? (lower.range(of: " leave ") ?? lower.range(of: " leaving ")) : lower.range(of: " at ")
+            if let markerRange = searchMarker {
+                let candidate = String(trimmed[markerRange.upperBound...]).trimmingCharacters(in: .whitespaces)
                 if !candidate.isEmpty {
                     if let match = existingMemories.first(where: {
                         $0.locationName?.localizedCaseInsensitiveContains(candidate) == true ||
@@ -150,6 +167,7 @@ enum ReminderAIParser {
                 }
             }
             
+            let hasLoc = lat != nil && lon != nil
             return ParsedReminderResult(
                 title: title.trimmingCharacters(in: .whitespacesAndNewlines),
                 notes: "",
@@ -159,6 +177,8 @@ enum ReminderAIParser {
                 locationName: locName,
                 latitude: lat,
                 longitude: lon,
+                notifyOnArrival: hasLoc ? !isDeparture : true,
+                notifyOnDeparture: hasLoc ? isDeparture : false,
                 linkedMemoryTitle: linkedTitle
             )
         }

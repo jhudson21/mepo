@@ -695,9 +695,19 @@ struct ReminderRowView: View {
                         }
                         
                         if reminder.hasLocation, let loc = reminder.locationName {
+                            let locIcon: String = {
+                                if reminder.linkedMemoryTitle != nil { return "sparkles" }
+                                if reminder.notifyOnDeparture && !reminder.notifyOnArrival { return "arrow.up.left.circle.fill" }
+                                return "location.fill"
+                            }()
+                            let locPrefix: String = {
+                                if reminder.notifyOnDeparture && !reminder.notifyOnArrival { return "Leaving " }
+                                if reminder.notifyOnArrival && reminder.notifyOnDeparture { return "Near " }
+                                return ""
+                            }()
                             HStack(spacing: 4) {
-                                Image(systemName: reminder.linkedMemoryTitle != nil ? "sparkles" : "location.fill")
-                                Text(loc)
+                                Image(systemName: locIcon)
+                                Text("\(locPrefix)\(loc)")
                             }
                             .font(.caption2.bold())
                             .foregroundColor(.purple)
@@ -796,6 +806,9 @@ struct ReminderLocationPickerSection: View {
     @Binding var locationName: String
     @Binding var latitude: Double?
     @Binding var longitude: Double?
+    @Binding var notifyOnArrival: Bool
+    @Binding var notifyOnDeparture: Bool
+    @Binding var radius: Double
     @Binding var linkedMemoryTitle: String?
     
     @Query(sort: \MemoryItem.createdAt, order: .reverse) private var memories: [MemoryItem]
@@ -808,9 +821,9 @@ struct ReminderLocationPickerSection: View {
     }
     
     var body: some View {
-        Section("Location & Arrival Alert") {
+        Section("Location & Geofence Alert") {
             Toggle(isOn: $hasLocation.animation()) {
-                Label("Remind When Arriving", systemImage: "location.fill")
+                Label("Location Alert", systemImage: "location.fill")
             }
             
             if hasLocation {
@@ -846,6 +859,30 @@ struct ReminderLocationPickerSection: View {
                         .buttonStyle(.plain)
                     }
                     .padding(.vertical, 4)
+                    
+                    // Geofence Trigger Condition
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Trigger Notification")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        Toggle(isOn: $notifyOnArrival) {
+                            Label("When Arriving", systemImage: "arrow.down.right.circle")
+                        }
+                        
+                        Toggle(isOn: $notifyOnDeparture) {
+                            Label("When Leaving", systemImage: "arrow.up.left.circle")
+                        }
+                    }
+                    .padding(.vertical, 2)
+                    
+                    // Geofence Radius
+                    Picker("Geofence Radius", selection: $radius) {
+                        Text("100 m (Immediate)").tag(100.0)
+                        Text("150 m (Standard)").tag(150.0)
+                        Text("300 m (Neighborhood)").tag(300.0)
+                        Text("500 m (Wide)").tag(500.0)
+                    }
                 }
                 
                 // Choose from Saved Memories
@@ -970,6 +1007,9 @@ struct AddReminderSheet: View {
     @State private var locationName: String
     @State private var latitude: Double?
     @State private var longitude: Double?
+    @State private var notifyOnArrival: Bool = true
+    @State private var notifyOnDeparture: Bool = false
+    @State private var radius: Double = 150.0
     @State private var linkedMemoryTitle: String?
     
     // Quick suggestion presets for common day-to-day reminders
@@ -1089,6 +1129,9 @@ struct AddReminderSheet: View {
                     locationName: $locationName,
                     latitude: $latitude,
                     longitude: $longitude,
+                    notifyOnArrival: $notifyOnArrival,
+                    notifyOnDeparture: $notifyOnDeparture,
+                    radius: $radius,
                     linkedMemoryTitle: $linkedMemoryTitle
                 )
                 
@@ -1152,6 +1195,8 @@ struct AddReminderSheet: View {
                     latitude = lat
                     longitude = lon
                     locationName = parsed.locationName ?? ""
+                    notifyOnArrival = parsed.notifyOnArrival
+                    notifyOnDeparture = parsed.notifyOnDeparture
                     linkedMemoryTitle = parsed.linkedMemoryTitle
                 }
                 isAIFilling = false
@@ -1174,8 +1219,9 @@ struct AddReminderSheet: View {
             locationName: hasLocation ? (locationName.isEmpty ? nil : locationName) : nil,
             latitude: hasLocation ? latitude : nil,
             longitude: hasLocation ? longitude : nil,
-            radius: 150.0,
-            notifyOnArrival: hasLocation,
+            radius: radius,
+            notifyOnArrival: hasLocation && notifyOnArrival,
+            notifyOnDeparture: hasLocation && notifyOnDeparture,
             linkedMemoryTitle: hasLocation ? linkedMemoryTitle : nil
         )
         
@@ -1201,6 +1247,9 @@ struct EditReminderSheet: View {
     @State private var locationName: String = ""
     @State private var latitude: Double?
     @State private var longitude: Double?
+    @State private var notifyOnArrival: Bool = true
+    @State private var notifyOnDeparture: Bool = false
+    @State private var radius: Double = 150.0
     @State private var linkedMemoryTitle: String?
     
     var body: some View {
@@ -1248,6 +1297,9 @@ struct EditReminderSheet: View {
                     locationName: $locationName,
                     latitude: $latitude,
                     longitude: $longitude,
+                    notifyOnArrival: $notifyOnArrival,
+                    notifyOnDeparture: $notifyOnDeparture,
+                    radius: $radius,
                     linkedMemoryTitle: $linkedMemoryTitle
                 )
                 
@@ -1286,7 +1338,9 @@ struct EditReminderSheet: View {
                         reminder.locationName = hasLocation ? (locationName.isEmpty ? nil : locationName) : nil
                         reminder.latitude = hasLocation ? latitude : nil
                         reminder.longitude = hasLocation ? longitude : nil
-                        reminder.notifyOnArrival = hasLocation
+                        reminder.radius = radius
+                        reminder.notifyOnArrival = hasLocation && notifyOnArrival
+                        reminder.notifyOnDeparture = hasLocation && notifyOnDeparture
                         reminder.linkedMemoryTitle = hasLocation ? linkedMemoryTitle : nil
                         
                         try? modelContext.save()
@@ -1303,6 +1357,9 @@ struct EditReminderSheet: View {
                 locationName = reminder.locationName ?? ""
                 latitude = reminder.latitude
                 longitude = reminder.longitude
+                notifyOnArrival = reminder.notifyOnArrival
+                notifyOnDeparture = reminder.notifyOnDeparture
+                radius = reminder.radius
                 linkedMemoryTitle = reminder.linkedMemoryTitle
             }
         }

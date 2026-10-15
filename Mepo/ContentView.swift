@@ -63,7 +63,7 @@ struct ContentView: View {
             )
         }
         
-        let latestMem = allMemories.first.map { m in
+        let widgetMemories = allMemories.prefix(5).map { m in
             WidgetMemory(
                 id: m.id.uuidString,
                 title: m.title,
@@ -71,11 +71,17 @@ struct ContentView: View {
                 locationName: m.locationName,
                 ratingScore: m.ratings.first?.score,
                 ratingSubject: m.ratings.first?.subject,
-                details: m.details
+                details: m.details,
+                dateText: m.createdAt.formatted(date: .abbreviated, time: .omitted)
             )
         }
+        let latestMem = widgetMemories.first
         
-        MepoWidgetStore.shared.save(reminders: widgetReminders, latestMemory: latestMem)
+        MepoWidgetStore.shared.save(
+            reminders: widgetReminders,
+            latestMemory: latestMem,
+            recentMemories: Array(widgetMemories)
+        )
     }
 }
 
@@ -871,6 +877,7 @@ struct MemoryCard: View {
     @Bindable var memory: MemoryItem
     @State private var showingEditSheet = false
     @State private var showingAddReminderSheet = false
+    @State private var showingShareSheet = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -965,6 +972,22 @@ struct MemoryCard: View {
                 Spacer()
                 
                 Button {
+                    showingShareSheet = true
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "square.and.arrow.up")
+                        Text("Share")
+                    }
+                    .font(.caption2.weight(.semibold))
+                    .foregroundColor(.purple)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.purple.opacity(0.12))
+                    .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                
+                Button {
                     showingAddReminderSheet = true
                 } label: {
                     HStack(spacing: 4) {
@@ -988,6 +1011,12 @@ struct MemoryCard: View {
         .hoverEffect(.highlight)
         .contextMenu {
             Button {
+                showingShareSheet = true
+            } label: {
+                Label("Share & Export Memory", systemImage: "square.and.arrow.up")
+            }
+            
+            Button {
                 showingAddReminderSheet = true
             } label: {
                 Label(memory.latitude != nil ? "Remind Me When I'm Here" : "Add Related Reminder", systemImage: "bell.badge")
@@ -1006,6 +1035,9 @@ struct MemoryCard: View {
             } label: {
                 Label("Delete Memory", systemImage: "trash")
             }
+        }
+        .sheet(isPresented: $showingShareSheet) {
+            MemoryShareSheet(memory: memory)
         }
         .sheet(isPresented: $showingEditSheet) {
             EditMemoryView(memory: memory)

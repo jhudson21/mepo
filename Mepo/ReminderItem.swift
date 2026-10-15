@@ -40,6 +40,7 @@ class ReminderItem {
     var longitude: Double? = nil
     var radius: Double = 150.0
     var notifyOnArrival: Bool = true
+    var notifyOnDeparture: Bool = false
     var linkedMemoryTitle: String? = nil
     
     var recurrence: ReminderRecurrence {
@@ -66,6 +67,7 @@ class ReminderItem {
         longitude: Double? = nil,
         radius: Double = 150.0,
         notifyOnArrival: Bool = true,
+        notifyOnDeparture: Bool = false,
         linkedMemoryTitle: String? = nil,
         createdAt: Date = .now
     ) {
@@ -83,6 +85,7 @@ class ReminderItem {
         self.longitude = longitude
         self.radius = radius
         self.notifyOnArrival = notifyOnArrival
+        self.notifyOnDeparture = notifyOnDeparture
         self.linkedMemoryTitle = linkedMemoryTitle
         self.createdAt = createdAt
     }
