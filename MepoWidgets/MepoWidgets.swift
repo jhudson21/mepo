@@ -606,3 +606,221 @@ struct MemoriesWidget: Widget {
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge, .accessoryRectangular])
     }
 }
+
+// MARK: - Quick Add Timeline Provider & Entry
+struct QuickAddEntry: TimelineEntry {
+    let date: Date
+}
+
+struct QuickAddTimelineProvider: TimelineProvider {
+    func placeholder(in context: Context) -> QuickAddEntry {
+        QuickAddEntry(date: Date())
+    }
+
+    func getSnapshot(in context: Context, completion: @escaping (QuickAddEntry) -> Void) {
+        completion(QuickAddEntry(date: Date()))
+    }
+
+    func getTimeline(in context: Context, completion: @escaping (Timeline<QuickAddEntry>) -> Void) {
+        let entry = QuickAddEntry(date: Date())
+        let timeline = Timeline(entries: [entry], policy: .never)
+        completion(timeline)
+    }
+}
+
+// MARK: - Quick Add Widget View
+struct QuickAddWidgetView: View {
+    @Environment(\.widgetFamily) var family
+    var entry: QuickAddEntry
+
+    var body: some View {
+        switch family {
+        case .systemSmall:
+            smallQuickAddView
+        case .systemMedium:
+            mediumQuickAddView
+        case .accessoryCircular:
+            accessoryCircularView
+        case .accessoryRectangular:
+            accessoryRectangularView
+        default:
+            mediumQuickAddView
+        }
+    }
+
+    // MARK: - Small Family View
+    @ViewBuilder private var smallQuickAddView: some View {
+        VStack(spacing: 8) {
+            HStack {
+                Image(systemName: "sparkles")
+                    .foregroundColor(.purple)
+                Text("QUICK CAPTURE")
+                    .font(.system(size: 10, weight: .heavy, design: .rounded))
+                    .foregroundColor(.secondary)
+                Spacer()
+            }
+
+            Link(destination: URL(string: "mepo://new-memory")!) {
+                HStack(spacing: 6) {
+                    Image(systemName: "sparkles")
+                    Text("Memory")
+                        .font(.subheadline.bold())
+                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(
+                    LinearGradient(colors: [Color.purple, Color.indigo], startPoint: .topLeading, endPoint: .bottomTrailing)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            }
+
+            Link(destination: URL(string: "mepo://new-reminder")!) {
+                HStack(spacing: 6) {
+                    Image(systemName: "checklist")
+                    Text("Reminder")
+                        .font(.subheadline.bold())
+                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(
+                    LinearGradient(colors: [Color.blue, Color.cyan], startPoint: .topLeading, endPoint: .bottomTrailing)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            }
+        }
+    }
+
+    // MARK: - Medium Family View
+    @ViewBuilder private var mediumQuickAddView: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                HStack(spacing: 5) {
+                    Image(systemName: "sparkles")
+                        .foregroundColor(.purple)
+                    Text("MEPO QUICK ACTIONS")
+                        .font(.caption2.bold())
+                        .foregroundColor(.purple)
+                }
+                Spacer()
+                Text("One-Tap Capture")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+
+            HStack(spacing: 8) {
+                Link(destination: URL(string: "mepo://new-memory")!) {
+                    VStack(spacing: 6) {
+                        Image(systemName: "sparkles")
+                            .font(.title2)
+                        Text("New Memory")
+                            .font(.subheadline.bold())
+                        Text("Places & ratings")
+                            .font(.caption2)
+                            .opacity(0.8)
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(
+                        LinearGradient(colors: [Color.purple, Color.indigo], startPoint: .topLeading, endPoint: .bottomTrailing)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                }
+
+                Link(destination: URL(string: "mepo://new-reminder")!) {
+                    VStack(spacing: 6) {
+                        Image(systemName: "checklist")
+                            .font(.title2)
+                        Text("New Reminder")
+                            .font(.subheadline.bold())
+                        Text("Tasks & alerts")
+                            .font(.caption2)
+                            .opacity(0.8)
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(
+                        LinearGradient(colors: [Color.blue, Color.cyan], startPoint: .topLeading, endPoint: .bottomTrailing)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                }
+
+                Link(destination: URL(string: "mepo://voice-reminder")!) {
+                    VStack(spacing: 6) {
+                        Image(systemName: "mic.fill")
+                            .font(.title2)
+                        Text("Dictate")
+                            .font(.subheadline.bold())
+                        Text("Voice note")
+                            .font(.caption2)
+                            .opacity(0.8)
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(
+                        LinearGradient(colors: [Color.orange, Color.red.opacity(0.85)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                }
+            }
+        }
+    }
+
+    // MARK: - Lock Screen Circular Accessory
+    @ViewBuilder private var accessoryCircularView: some View {
+        Link(destination: URL(string: "mepo://new-memory")!) {
+            ZStack {
+                AccessoryWidgetBackground()
+                VStack(spacing: 1) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 14, weight: .bold))
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 12))
+                }
+            }
+        }
+    }
+
+    // MARK: - Lock Screen Rectangular Accessory
+    @ViewBuilder private var accessoryRectangularView: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 4) {
+                Image(systemName: "sparkles")
+                Text("Mepo Quick Add")
+                    .font(.caption2.bold())
+            }
+            HStack(spacing: 6) {
+                Link(destination: URL(string: "mepo://new-memory")!) {
+                    HStack(spacing: 2) {
+                        Image(systemName: "plus")
+                        Text("Memory")
+                    }
+                    .font(.caption.bold())
+                }
+                Text("•")
+                    .foregroundColor(.secondary)
+                Link(destination: URL(string: "mepo://new-reminder")!) {
+                    HStack(spacing: 2) {
+                        Image(systemName: "plus")
+                        Text("Task")
+                    }
+                    .font(.caption.bold())
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Quick Add Widget Definition
+struct QuickAddWidget: Widget {
+    let kind: String = "QuickAddWidget"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: QuickAddTimelineProvider()) { entry in
+            QuickAddWidgetView(entry: entry)
+                .containerBackground(.fill.tertiary, for: .widget)
+        }
+        .configurationDisplayName("Quick Add")
+        .description("Instantly add new memories, reminders, or dictate voice notes.")
+        .supportedFamilies([.systemSmall, .systemMedium, .accessoryCircular, .accessoryRectangular])
+    }
+}

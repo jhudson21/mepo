@@ -14,6 +14,10 @@ import AppKit
 struct ContentView: View {
     @AppStorage("appTheme") private var appTheme = AppTheme.system
     @State private var selectedTab: Int = 0
+    @State private var quickActionManager = QuickActionManager.shared
+    @State private var showingQuickAddMemory = false
+    @State private var showingQuickAddReminder = false
+    
     @Query(sort: \ReminderItem.createdAt, order: .reverse) private var allReminders: [ReminderItem]
     @Query(sort: \MemoryItem.createdAt, order: .reverse) private var allMemories: [MemoryItem]
     
@@ -31,6 +35,20 @@ struct ContentView: View {
         .preferredColorScheme(appTheme.colorScheme)
         .onAppear {
             syncWidgets()
+            if let action = quickActionManager.activeAction {
+                handleQuickAction(action)
+            }
+        }
+        .onChange(of: quickActionManager.activeAction) { _, newAction in
+            if let newAction {
+                handleQuickAction(newAction)
+            }
+        }
+        .sheet(isPresented: $showingQuickAddMemory) {
+            AddMemoryView()
+        }
+        .sheet(isPresented: $showingQuickAddReminder) {
+            AddReminderSheet()
         }
         .onChange(of: allReminders) {
             syncWidgets()
@@ -38,6 +56,18 @@ struct ContentView: View {
         .onChange(of: allMemories) {
             syncWidgets()
         }
+    }
+    
+    private func handleQuickAction(_ action: MepoQuickAction) {
+        switch action {
+        case .newMemory:
+            selectedTab = 0
+            showingQuickAddMemory = true
+        case .newReminder, .voiceReminder:
+            selectedTab = 1
+            showingQuickAddReminder = true
+        }
+        quickActionManager.activeAction = nil
     }
     
     private func syncWidgets() {

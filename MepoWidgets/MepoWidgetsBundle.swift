@@ -6,5 +6,6 @@ struct MepoWidgetsBundle: WidgetBundle {
     var body: some Widget {
         RemindersWidget()
         MemoriesWidget()
+        QuickAddWidget()
     }
 }

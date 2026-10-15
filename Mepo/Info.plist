@@ -2,8 +2,52 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.jordanhudsonpersonalteam.Mepo</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>mepo</string>
+			</array>
+		</dict>
+	</array>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Mepo saves exported memory cards to your photo library.</string>
+	<key>UIApplicationShortcutItems</key>
+	<array>
+		<dict>
+			<key>UIApplicationShortcutItemIconSymbolName</key>
+			<string>sparkles</string>
+			<key>UIApplicationShortcutItemSubtitle</key>
+			<string>Log a place, photo, or note</string>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>New Memory</string>
+			<key>UIApplicationShortcutItemType</key>
+			<string>com.jordanhudsonpersonalteam.Mepo.newMemory</string>
+		</dict>
+		<dict>
+			<key>UIApplicationShortcutItemIconSymbolName</key>
+			<string>checklist</string>
+			<key>UIApplicationShortcutItemSubtitle</key>
+			<string>Add a task or geofence alert</string>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>New Reminder</string>
+			<key>UIApplicationShortcutItemType</key>
+			<string>com.jordanhudsonpersonalteam.Mepo.newReminder</string>
+		</dict>
+		<dict>
+			<key>UIApplicationShortcutItemIconSymbolName</key>
+			<string>mic</string>
+			<key>UIApplicationShortcutItemSubtitle</key>
+			<string>Dictate a quick task or note</string>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>Voice Dictation</string>
+			<key>UIApplicationShortcutItemType</key>
+			<string>com.jordanhudsonpersonalteam.Mepo.voiceReminder</string>
+		</dict>
+	</array>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

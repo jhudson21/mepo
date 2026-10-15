@@ -49,9 +49,16 @@ var sharedModelContainer: ModelContainer = {
 
 @main
 struct MyApp: App {
+    #if canImport(UIKit)
+    @UIApplicationDelegateAdaptor(MepoAppDelegate.self) var appDelegate
+    #endif
+
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .onOpenURL { url in
+                    _ = QuickActionManager.shared.handle(url: url)
+                }
         }
         .modelContainer(sharedModelContainer)
     }
