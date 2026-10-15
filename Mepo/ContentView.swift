@@ -160,6 +160,87 @@ func categoryIcon(for category: String) -> String {
     }
 }
 
+// MARK: - Liquid Glass View Mode Toggle
+struct LiquidGlassViewModeToggle: View {
+    @Binding var displayMode: MemoriesDisplayMode
+    @Namespace private var toggleNamespace
+    
+    var body: some View {
+        HStack(spacing: 2) {
+            Button {
+                withAnimation(.spring(response: 0.32, dampingFraction: 0.72)) {
+                    displayMode = .list
+                }
+            } label: {
+                Image(systemName: "rectangle.grid.1x2")
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(displayMode == .list ? .primary : .secondary)
+                    .frame(width: 34, height: 28)
+                    .background {
+                        if displayMode == .list {
+                            Capsule()
+                                .fill(.ultraThinMaterial)
+                                .overlay(
+                                    Capsule()
+                                        .fill(Color.white.opacity(0.35))
+                                )
+                                .overlay(
+                                    Capsule()
+                                        .strokeBorder(Color.white.opacity(0.6), lineWidth: 0.6)
+                                )
+                                .shadow(color: Color.black.opacity(0.12), radius: 3, x: 0, y: 1.5)
+                                .matchedGeometryEffect(id: "activeGlassPill", in: toggleNamespace)
+                        }
+                    }
+            }
+            .buttonStyle(.plain)
+            
+            Button {
+                withAnimation(.spring(response: 0.32, dampingFraction: 0.72)) {
+                    displayMode = .map
+                }
+            } label: {
+                Image(systemName: "map")
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(displayMode == .map ? .primary : .secondary)
+                    .frame(width: 34, height: 28)
+                    .background {
+                        if displayMode == .map {
+                            Capsule()
+                                .fill(.ultraThinMaterial)
+                                .overlay(
+                                    Capsule()
+                                        .fill(Color.white.opacity(0.35))
+                                )
+                                .overlay(
+                                    Capsule()
+                                        .strokeBorder(Color.white.opacity(0.6), lineWidth: 0.6)
+                                )
+                                .shadow(color: Color.black.opacity(0.12), radius: 3, x: 0, y: 1.5)
+                                .matchedGeometryEffect(id: "activeGlassPill", in: toggleNamespace)
+                        }
+                    }
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(2.5)
+        .background(.ultraThinMaterial)
+        .clipShape(Capsule())
+        .overlay(
+            Capsule()
+                .strokeBorder(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.55), Color.white.opacity(0.15)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 0.75
+                )
+        )
+        .shadow(color: Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
+    }
+}
+
 // MARK: - App MemoriesView
 struct MemoriesView: View {
     @Environment(\.modelContext) private var modelContext
@@ -261,38 +342,7 @@ struct MemoriesView: View {
                 }
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     if horizontalSizeClass != .regular {
-                        HStack(spacing: 0) {
-                            Button {
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                    displayMode = .list
-                                }
-                            } label: {
-                                Image(systemName: "rectangle.grid.1x2")
-                                    .font(.caption.bold())
-                                    .foregroundColor(displayMode == .list ? .white : .primary)
-                                    .frame(width: 32, height: 28)
-                                    .background(displayMode == .list ? Color.accentColor : Color.clear)
-                                    .clipShape(Capsule())
-                            }
-                            .buttonStyle(.plain)
-                            
-                            Button {
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                    displayMode = .map
-                                }
-                            } label: {
-                                Image(systemName: "map")
-                                    .font(.caption.bold())
-                                    .foregroundColor(displayMode == .map ? .white : .primary)
-                                    .frame(width: 32, height: 28)
-                                    .background(displayMode == .map ? Color.accentColor : Color.clear)
-                                    .clipShape(Capsule())
-                            }
-                            .buttonStyle(.plain)
-                        }
-                        .padding(2)
-                        .background(Color.primary.opacity(0.1))
-                        .clipShape(Capsule())
+                        LiquidGlassViewModeToggle(displayMode: $displayMode)
                     }
                     
                     Button(action: { showingAddSheet = true }) {
@@ -308,38 +358,7 @@ struct MemoriesView: View {
                 }
                 ToolbarItemGroup(placement: .primaryAction) {
                     if horizontalSizeClass != .regular {
-                        HStack(spacing: 0) {
-                            Button {
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                    displayMode = .list
-                                }
-                            } label: {
-                                Image(systemName: "rectangle.grid.1x2")
-                                    .font(.caption.bold())
-                                    .foregroundColor(displayMode == .list ? .white : .primary)
-                                    .frame(width: 32, height: 28)
-                                    .background(displayMode == .list ? Color.accentColor : Color.clear)
-                                    .clipShape(Capsule())
-                            }
-                            .buttonStyle(.plain)
-                            
-                            Button {
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                    displayMode = .map
-                                }
-                            } label: {
-                                Image(systemName: "map")
-                                    .font(.caption.bold())
-                                    .foregroundColor(displayMode == .map ? .white : .primary)
-                                    .frame(width: 32, height: 28)
-                                    .background(displayMode == .map ? Color.accentColor : Color.clear)
-                                    .clipShape(Capsule())
-                            }
-                            .buttonStyle(.plain)
-                        }
-                        .padding(2)
-                        .background(Color.primary.opacity(0.1))
-                        .clipShape(Capsule())
+                        LiquidGlassViewModeToggle(displayMode: $displayMode)
                     }
                     Button(action: { showingAddSheet = true }) {
                         Image(systemName: "plus")
