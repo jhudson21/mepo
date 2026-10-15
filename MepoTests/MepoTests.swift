@@ -365,4 +365,34 @@ import SwiftData
         #expect(remainingReminders.count == 1)
         #expect(remainingReminders.first?.title == "My Personal Custom Task")
     }
+
+    // MARK: - 10. Memory Category Filtering & Icon Tests
+    @Test func memoryCategoryIconsAndFiltering() {
+        #expect(categoryIcon(for: "All") == "sparkles")
+        #expect(categoryIcon(for: "Food & Drink") == "fork.knife")
+        #expect(categoryIcon(for: "Coffee & Cafes") == "cup.and.saucer.fill")
+        #expect(categoryIcon(for: "Cocktail Bar") == "wineglass.fill")
+        #expect(categoryIcon(for: "Travel") == "airplane")
+        #expect(categoryIcon(for: "Books & Arts") == "books.vertical.fill")
+        #expect(categoryIcon(for: "Places") == "mappin.and.ellipse")
+        #expect(categoryIcon(for: "Notes") == "note.text")
+        #expect(categoryIcon(for: "Shopping") == "bag.fill")
+        #expect(categoryIcon(for: "Parks") == "leaf.fill")
+        #expect(categoryIcon(for: "CustomOther") == "tag.fill")
+        
+        let m1 = MemoryItem(title: "Pasta Place", category: "Food & Drink")
+        let m2 = MemoryItem(title: "Espresso Bar", category: "Coffee & Cafes")
+        let m3 = MemoryItem(title: "Bookshop", category: "Books & Arts")
+        let memories = [m1, m2, m3]
+        
+        let distinctCategories = ["All"] + Array(Set(memories.map { $0.category })).sorted()
+        #expect(distinctCategories.contains("All"))
+        #expect(distinctCategories.contains("Food & Drink"))
+        #expect(distinctCategories.contains("Coffee & Cafes"))
+        #expect(distinctCategories.contains("Books & Arts"))
+        
+        let filteredFood = memories.filter { $0.category.localizedCaseInsensitiveCompare("Food & Drink") == .orderedSame }
+        #expect(filteredFood.count == 1)
+        #expect(filteredFood.first?.title == "Pasta Place")
+    }
 }

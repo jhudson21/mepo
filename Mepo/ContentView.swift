@@ -135,7 +135,9 @@ enum MemoriesDisplayMode: String, CaseIterable, Identifiable {
 
 func categoryIcon(for category: String) -> String {
     let lower = category.lowercased()
-    if lower.contains("food") || lower.contains("restaurant") || lower.contains("eat") || lower.contains("dinner") {
+    if lower == "all" {
+        return "sparkles"
+    } else if lower.contains("food") || lower.contains("restaurant") || lower.contains("eat") || lower.contains("dinner") {
         return "fork.knife"
     } else if lower.contains("coffee") || lower.contains("cafe") || lower.contains("tea") {
         return "cup.and.saucer.fill"
@@ -143,12 +145,18 @@ func categoryIcon(for category: String) -> String {
         return "wineglass.fill"
     } else if lower.contains("travel") || lower.contains("hotel") || lower.contains("flight") {
         return "airplane"
+    } else if lower.contains("book") || lower.contains("art") || lower.contains("read") {
+        return "books.vertical.fill"
+    } else if lower.contains("place") {
+        return "mappin.and.ellipse"
+    } else if lower.contains("note") {
+        return "note.text"
     } else if lower.contains("shop") || lower.contains("store") || lower.contains("market") {
         return "bag.fill"
     } else if lower.contains("nature") || lower.contains("park") || lower.contains("outdoor") {
         return "leaf.fill"
     } else {
-        return "sparkles"
+        return "tag.fill"
     }
 }
 
@@ -166,8 +174,24 @@ struct MemoriesView: View {
     @State private var showingAddSheet = false
     @State private var showingSettingsSheet = false
     @State private var searchText = ""
+    @State private var selectedCategory = "All"
     @State private var locationManager = LocationManager()
     @AppStorage("appTheme") private var appTheme = AppTheme.system
+    
+    var availableCategories: [String] {
+        let memoryCategories = Array(Set(memories.map { $0.category })).filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+        if memoryCategories.isEmpty {
+            return ["All", "Food & Drink", "Cafe", "Travel", "Places", "Notes"]
+        }
+        return ["All"] + memoryCategories.sorted()
+    }
+    
+    func countForCategory(_ cat: String) -> Int {
+        if cat == "All" {
+            return memories.count
+        }
+        return memories.filter { $0.category.localizedCaseInsensitiveCompare(cat) == .orderedSame }.count
+    }
     
     var nearbyMemory: MemoryItem? {
         guard let currentLoc = locationManager.location else { return nil }
@@ -181,14 +205,23 @@ struct MemoriesView: View {
     }
     
     var filteredMemories: [MemoryItem] {
-        if searchText.trimmingCharacters(in: .whitespaces).isEmpty {
-            return memories
-        }
-        return memories.filter { memory in
-            memory.title.localizedCaseInsensitiveContains(searchText) ||
-            memory.details.localizedCaseInsensitiveContains(searchText) ||
-            memory.category.localizedCaseInsensitiveContains(searchText) ||
-            (memory.locationName?.localizedCaseInsensitiveContains(searchText) ?? false)
+        memories.filter { memory in
+            if selectedCategory != "All" {
+                guard memory.category.localizedCaseInsensitiveCompare(selectedCategory) == .orderedSame else {
+                    return false
+                }
+            }
+            let query = searchText.trimmingCharacters(in: .whitespaces)
+            if !query.isEmpty {
+                let matchesTitle = memory.title.localizedCaseInsensitiveContains(query)
+                let matchesDetails = memory.details.localizedCaseInsensitiveContains(query)
+                let matchesCategory = memory.category.localizedCaseInsensitiveContains(query)
+                let matchesLocation = memory.locationName?.localizedCaseInsensitiveContains(query) ?? false
+                guard matchesTitle || matchesDetails || matchesCategory || matchesLocation else {
+                    return false
+                }
+            }
+            return true
         }
     }
     
@@ -283,41 +316,54 @@ struct MemoriesView: View {
     @ViewBuilder
     private var compactView: some View {
         if displayMode == .map {
-            mapContentView
+            VStack(spacing: 0) {
+                filterCapsulePicker
+                mapContentView
+            }
         } else if memories.isEmpty && searchText.isEmpty {
             emptyStateView
-        } else if filteredMemories.isEmpty {
-            ContentUnavailableView.search(text: searchText)
         } else {
-            ScrollView {
-                LazyVStack(spacing: 16) {
-                    if let hero = nearbyMemory, searchText.trimmingCharacters(in: .whitespaces).isEmpty {
-                        VStack(alignment: .leading, spacing: 5) {
-                            HStack {
-                                Image(systemName: "location.fill")
-                                Text("Nearby Memory")
+            VStack(spacing: 0) {
+                filterCapsulePicker
+                
+                if filteredMemories.isEmpty {
+                    ContentUnavailableView.search(text: searchText.isEmpty ? selectedCategory : searchText)
+                } else {
+                    ScrollView {
+                        LazyVStack(spacing: 16) {
+                            if let hero = nearbyMemory,
+                               searchText.trimmingCharacters(in: .whitespaces).isEmpty &&
+                               (selectedCategory == "All" || hero.category.localizedCaseInsensitiveCompare(selectedCategory) == .orderedSame) {
+                                VStack(alignment: .leading, spacing: 5) {
+                                    HStack {
+                                        Image(systemName: "location.fill")
+                                        Text("Nearby Memory")
+                                    }
+                                    .font(.subheadline.bold())
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal)
+                                    
+                                    MemoryCard(memory: hero)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 16)
+                                                .stroke(Color.white.opacity(0.8), lineWidth: 3)
+                                        )
+                                }
+                                .padding(.top, 4)
+                                .padding(.bottom, 8)
                             }
-                            .font(.subheadline.bold())
-                            .foregroundColor(.white)
-                            .padding(.horizontal)
                             
-                            MemoryCard(memory: hero)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(Color.white.opacity(0.8), lineWidth: 3)
-                                )
+                            ForEach(filteredMemories) { memory in
+                                if memory.id != nearbyMemory?.id ||
+                                   !searchText.trimmingCharacters(in: .whitespaces).isEmpty ||
+                                   (selectedCategory != "All" && nearbyMemory?.category.localizedCaseInsensitiveCompare(selectedCategory) != .orderedSame) {
+                                    MemoryCard(memory: memory)
+                                }
+                            }
                         }
-                        .padding(.top, 4)
-                        .padding(.bottom, 8)
-                    }
-                    
-                    ForEach(filteredMemories) { memory in
-                        if memory.id != nearbyMemory?.id || !searchText.trimmingCharacters(in: .whitespaces).isEmpty {
-                            MemoryCard(memory: memory)
-                        }
+                        .padding()
                     }
                 }
-                .padding()
             }
         }
     }
@@ -368,16 +414,20 @@ struct MemoriesView: View {
     // Left / Bottom Pane (Memory Cards Feed)
     private var cardsListView: some View {
         VStack(spacing: 0) {
+            filterCapsulePicker
+            
             if memories.isEmpty && searchText.isEmpty {
                 emptyStateView
                     .padding(.horizontal, 16)
             } else if filteredMemories.isEmpty {
-                ContentUnavailableView.search(text: searchText)
+                ContentUnavailableView.search(text: searchText.isEmpty ? selectedCategory : searchText)
                     .padding(.horizontal, 16)
             } else {
                 ScrollView {
                     LazyVStack(spacing: 12) {
-                        if let hero = nearbyMemory, searchText.trimmingCharacters(in: .whitespaces).isEmpty {
+                        if let hero = nearbyMemory,
+                           searchText.trimmingCharacters(in: .whitespaces).isEmpty &&
+                           (selectedCategory == "All" || hero.category.localizedCaseInsensitiveCompare(selectedCategory) == .orderedSame) {
                             VStack(alignment: .leading, spacing: 5) {
                                 HStack {
                                     Image(systemName: "location.fill")
@@ -402,7 +452,9 @@ struct MemoriesView: View {
                         }
                         
                         ForEach(filteredMemories) { memory in
-                            if memory.id != nearbyMemory?.id || !searchText.trimmingCharacters(in: .whitespaces).isEmpty {
+                            if memory.id != nearbyMemory?.id ||
+                               !searchText.trimmingCharacters(in: .whitespaces).isEmpty ||
+                               (selectedCategory != "All" && nearbyMemory?.category.localizedCaseInsensitiveCompare(selectedCategory) != .orderedSame) {
                                 MemoryCard(memory: memory)
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -421,6 +473,58 @@ struct MemoriesView: View {
                 }
             }
         }
+    }
+    
+    // MARK: - Category Filter Picker
+    private var filterCapsulePicker: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(availableCategories, id: \.self) { category in
+                    Button {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            selectedCategory = category
+                        }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: categoryIcon(for: category))
+                            Text(category)
+                            
+                            let count = countForCategory(category)
+                            if count > 0 {
+                                Text("\(count)")
+                                    .font(.caption2.bold())
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(selectedCategory == category ? Color.white.opacity(0.3) : Color.primary.opacity(0.1))
+                                    .clipShape(Capsule())
+                            }
+                        }
+                        .font(.subheadline.bold())
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .background(selectedCategory == category ? Color.accentColor : Color.primary.opacity(0.08))
+                        .foregroundColor(selectedCategory == category ? .white : .primary)
+                        .clipShape(Capsule())
+                        .hoverEffect(.lift)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+        }
+        .mask(
+            LinearGradient(
+                stops: [
+                    .init(color: .clear, location: 0),
+                    .init(color: .black, location: 0.04),
+                    .init(color: .black, location: 0.96),
+                    .init(color: .clear, location: 1)
+                ],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+        )
     }
     
     private func selectMemory(_ memory: MemoryItem) {
