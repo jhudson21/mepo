@@ -89,6 +89,9 @@ struct RemindersView: View {
                     .ignoresSafeArea()
             }
             .navigationTitle("Day to Day")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.large)
+            #endif
             .searchable(text: $searchText, prompt: "Search reminders...")
             .toolbar {
                 #if os(iOS)

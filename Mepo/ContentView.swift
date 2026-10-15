@@ -246,6 +246,9 @@ struct MemoriesView: View {
                     .ignoresSafeArea()
             }
             .navigationTitle("Memories")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.large)
+            #endif
             .searchable(text: $searchText, prompt: "Search memories...")
             .toolbar {
                 #if os(iOS)
@@ -254,17 +257,16 @@ struct MemoriesView: View {
                         Image(systemName: "gear")
                     }
                 }
-                if horizontalSizeClass != .regular {
-                    ToolbarItem(placement: .principal) {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    if horizontalSizeClass != .regular {
                         Picker("View", selection: $displayMode.animation()) {
                             Image(systemName: "rectangle.grid.1x2").tag(MemoriesDisplayMode.list)
                             Image(systemName: "map").tag(MemoriesDisplayMode.map)
                         }
                         .pickerStyle(.segmented)
-                        .frame(width: 100)
+                        .frame(width: 80)
                     }
-                }
-                ToolbarItem(placement: .primaryAction) {
+                    
                     Button(action: { showingAddSheet = true }) {
                         Image(systemName: "plus")
                     }
@@ -276,17 +278,15 @@ struct MemoriesView: View {
                         Image(systemName: "gear")
                     }
                 }
-                if horizontalSizeClass != .regular {
-                    ToolbarItem(placement: .principal) {
+                ToolbarItemGroup(placement: .primaryAction) {
+                    if horizontalSizeClass != .regular {
                         Picker("View", selection: $displayMode.animation()) {
                             Image(systemName: "rectangle.grid.1x2").tag(MemoriesDisplayMode.list)
                             Image(systemName: "map").tag(MemoriesDisplayMode.map)
                         }
                         .pickerStyle(.segmented)
-                        .frame(width: 100)
+                        .frame(width: 80)
                     }
-                }
-                ToolbarItem(placement: .primaryAction) {
                     Button(action: { showingAddSheet = true }) {
                         Image(systemName: "plus")
                     }
