@@ -4,21 +4,21 @@ import FoundationModels
 
 @Model
 class MemoryItem {
-    var id: UUID
-    var title: String
-    var details: String
-    var category: String
-    var locationName: String?
-    var latitude: Double?
-    var longitude: Double?
+    var id: UUID = UUID()
+    var title: String = ""
+    var details: String = ""
+    var category: String = "Notes"
+    var locationName: String? = nil
+    var latitude: Double? = nil
+    var longitude: Double? = nil
     
     @Attribute(.externalStorage)
-    var photoData: Data?
-    var createdAt: Date
+    var photoData: Data? = nil
+    var createdAt: Date = Date.now
     
-    var ratings: [MemoryRating]
+    var ratings: [MemoryRating] = []
     
-    init(id: UUID = UUID(), title: String, details: String, category: String, locationName: String? = nil, latitude: Double? = nil, longitude: Double? = nil, photoData: Data? = nil, ratings: [MemoryRating] = [], createdAt: Date = .now) {
+    init(id: UUID = UUID(), title: String = "", details: String = "", category: String = "Notes", locationName: String? = nil, latitude: Double? = nil, longitude: Double? = nil, photoData: Data? = nil, ratings: [MemoryRating] = [], createdAt: Date = .now) {
         self.id = id
         self.title = title
         self.details = details

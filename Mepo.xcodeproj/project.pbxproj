@@ -6,14 +6,74 @@
 	objectVersion = 90;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		8960B71B307FD85100B54E93 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8960B71A307FD85100B54E93 /* WidgetKit.framework */; };
+		8960B71D307FD85100B54E93 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8960B71C307FD85100B54E93 /* SwiftUI.framework */; };
+		8960B72A307FD85300B54E93 /* MepoWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 8960B718307FD85100B54E93 /* MepoWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		8960B728307FD85300B54E93 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 000000000000000000000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 8960B717307FD85100B54E93;
+			remoteInfo = MepoWidgetsExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		8960B72F307FD85300B54E93 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			dstPath = "";
+			dstSubfolder = PlugIns;
+			files = (
+				8960B72A307FD85300B54E93 /* MepoWidgetsExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		000000000000000000000120 /* Mepo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Mepo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		8960B718307FD85100B54E93 /* MepoWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MepoWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		8960B71A307FD85100B54E93 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		8960B71C307FD85100B54E93 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		8960B731307FD88200B54E93 /* MepoWidgetsExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MepoWidgetsExtension.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		890FE3A63080190600E199CE /* Exceptions for "Mepo" folder in "Mepo" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 000000000000000100000000 /* Mepo */;
+		};
+		8960B72B307FD85300B54E93 /* Exceptions for "MepoWidgets" folder in "MepoWidgetsExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 8960B717307FD85100B54E93 /* MepoWidgetsExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		000000000000000000000010 /* Mepo */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				890FE3A63080190600E199CE /* Exceptions for "Mepo" folder in "Mepo" target */,
+			);
 			path = Mepo;
+			sourceTree = "<group>";
+		};
+		8960B71E307FD85100B54E93 /* MepoWidgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				8960B72B307FD85300B54E93 /* Exceptions for "MepoWidgets" folder in "MepoWidgetsExtension" target */,
+			);
+			path = MepoWidgets;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -24,13 +84,23 @@
 			files = (
 			);
 		};
+		8960B715307FD85100B54E93 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+				8960B71D307FD85100B54E93 /* SwiftUI.framework in Frameworks */,
+				8960B71B307FD85100B54E93 /* WidgetKit.framework in Frameworks */,
+			);
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		000000000000000000000001 = {
 			isa = PBXGroup;
 			children = (
+				8960B731307FD88200B54E93 /* MepoWidgetsExtension.entitlements */,
 				000000000000000000000010 /* Mepo */,
+				8960B71E307FD85100B54E93 /* MepoWidgets */,
+				8960B719307FD85100B54E93 /* Frameworks */,
 				000000000000000000000020 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -39,8 +109,18 @@
 			isa = PBXGroup;
 			children = (
 				000000000000000000000120 /* Mepo.app */,
+				8960B718307FD85100B54E93 /* MepoWidgetsExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		8960B719307FD85100B54E93 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				8960B71A307FD85100B54E93 /* WidgetKit.framework */,
+				8960B71C307FD85100B54E93 /* SwiftUI.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -53,8 +133,12 @@
 				000000000000000120000000 /* Sources */,
 				000000000000000130000000 /* Frameworks */,
 				000000000000000140000000 /* Resources */,
+				8960B72F307FD85300B54E93 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
+			);
+			dependencies = (
+				8960B729307FD85300B54E93 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				000000000000000000000010 /* Mepo */,
@@ -64,6 +148,24 @@
 			productReference = 000000000000000000000120 /* Mepo.app */;
 			productType = "com.apple.product-type.application";
 		};
+		8960B717307FD85100B54E93 /* MepoWidgetsExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8960B72C307FD85300B54E93 /* Build configuration list for PBXNativeTarget "MepoWidgetsExtension" */;
+			buildPhases = (
+				8960B714307FD85100B54E93 /* Sources */,
+				8960B715307FD85100B54E93 /* Frameworks */,
+				8960B716307FD85100B54E93 /* Resources */,
+			);
+			buildRules = (
+			);
+			fileSystemSynchronizedGroups = (
+				8960B71E307FD85100B54E93 /* MepoWidgets */,
+			);
+			name = MepoWidgetsExtension;
+			productName = MepoWidgetsExtension;
+			productReference = 8960B718307FD85100B54E93 /* MepoWidgetsExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -71,11 +173,14 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2630;
-				LastUpgradeCheck = 2700;
+				LastSwiftUpdateCheck = 2700;
+				LastUpgradeCheck = 2710;
 				TargetAttributes = {
 					000000000000000100000000 = {
 						CreatedOnToolsVersion = 26.3;
+					};
+					8960B717307FD85100B54E93 = {
+						CreatedOnToolsVersion = 27.0;
 					};
 				};
 			};
@@ -94,12 +199,18 @@
 			projectRoot = "";
 			targets = (
 				000000000000000100000000 /* Mepo */,
+				8960B717307FD85100B54E93 /* MepoWidgetsExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		000000000000000140000000 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		8960B716307FD85100B54E93 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
 			);
@@ -112,7 +223,20 @@
 			files = (
 			);
 		};
+		8960B714307FD85100B54E93 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		8960B729307FD85300B54E93 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 8960B717307FD85100B54E93 /* MepoWidgetsExtension */;
+			targetProxy = 8960B728307FD85300B54E93 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		000000000000000011000000 /* Debug configuration for PBXProject "Mepo" */ = {
@@ -151,6 +275,7 @@
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = F2TPPDXCYG;
 				DRIVERKIT_DEPLOYMENT_TARGET = 27.0;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -221,6 +346,7 @@
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = F2TPPDXCYG;
 				DRIVERKIT_DEPLOYMENT_TARGET = 27.0;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -250,13 +376,18 @@
 		000000000000000111000000 /* Debug configuration for PBXNativeTarget "Mepo" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Mepo/Mepo.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Mepo/Info.plist;
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Mepo uses your location to show memories near you.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Mepo uses your microphone so you can dictate memories and reminders by voice.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Mepo uses speech recognition to transcribe your spoken voice into memories and reminders.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -267,10 +398,11 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "devplaceholder.$(PROJECT_UNIQUE_VALUE:identifier).$(PRODUCT_NAME:rfc1034identifier)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.jordanhudsonpersonalteam.Mepo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -288,13 +420,18 @@
 		000000000000000112000000 /* Release configuration for PBXNativeTarget "Mepo" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Mepo/Mepo.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Mepo/Info.plist;
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Mepo uses your location to show memories near you.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Mepo uses your microphone so you can dictate memories and reminders by voice.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Mepo uses speech recognition to transcribe your spoken voice into memories and reminders.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -305,10 +442,11 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "devplaceholder.$(PROJECT_UNIQUE_VALUE:identifier).$(PRODUCT_NAME:rfc1034identifier)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.jordanhudsonpersonalteam.Mepo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -320,6 +458,73 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
+			};
+			name = Release;
+		};
+		8960B72D307FD85300B54E93 /* Debug configuration for PBXNativeTarget "MepoWidgetsExtension" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = MepoWidgetsExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MepoWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = MepoWidgets;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jordanhudsonpersonalteam.Mepo.MepoWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		8960B72E307FD85300B54E93 /* Release configuration for PBXNativeTarget "MepoWidgetsExtension" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = MepoWidgetsExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MepoWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = MepoWidgets;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jordanhudsonpersonalteam.Mepo.MepoWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
 		};
@@ -339,6 +544,14 @@
 			buildConfigurations = (
 				000000000000000111000000 /* Debug configuration for PBXNativeTarget "Mepo" */,
 				000000000000000112000000 /* Release configuration for PBXNativeTarget "Mepo" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		8960B72C307FD85300B54E93 /* Build configuration list for PBXNativeTarget "MepoWidgetsExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8960B72D307FD85300B54E93 /* Debug configuration for PBXNativeTarget "MepoWidgetsExtension" */,
+				8960B72E307FD85300B54E93 /* Release configuration for PBXNativeTarget "MepoWidgetsExtension" */,
 			);
 			defaultConfigurationName = Release;
 		};

@@ -1,0 +1,11 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="01 &#194;&#183; Background &#226;&#128;&#148; full bleed">
+<path id="Vector" d="M0 0H1024V1024H0V0Z" fill="url(#paint0_linear_3_3)"/>
+</g>
+<defs>
+<linearGradient id="paint0_linear_3_3" x1="512" y1="0" x2="512" y2="1024" gradientUnits="userSpaceOnUse">
+<stop stop-color="#489FAE"/>
+<stop offset="1" stop-color="#303F7D"/>
+</linearGradient>
+</defs>
+</svg>
