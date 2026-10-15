@@ -21,27 +21,13 @@ var sharedModelContainer: ModelContainer = {
         MemoryItem.self,
         ReminderItem.self,
     ])
-    
-    // Primary: CloudKit-backed private database for automatic cross-device sync
-    let cloudConfig = ModelConfiguration(
-        schema: schema,
-        isStoredInMemoryOnly: false,
-        cloudKitDatabase: .private("iCloud.com.jordanhudsonpersonalteam.Mepo")
-    )
-    
-    if let container = try? ModelContainer(for: schema, configurations: [cloudConfig]) {
-        return container
-    }
-    
-    // Fallback: Local persistent store if CloudKit is unreachable during development
-    let fallbackConfig = ModelConfiguration(
+    let config = ModelConfiguration(
         schema: schema,
         isStoredInMemoryOnly: false,
         cloudKitDatabase: .none
     )
-    
     do {
-        return try ModelContainer(for: schema, configurations: [fallbackConfig])
+        return try ModelContainer(for: schema, configurations: [config])
     } catch {
         fatalError("Could not create ModelContainer: \(error)")
     }
