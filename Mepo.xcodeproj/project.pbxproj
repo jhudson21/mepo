@@ -20,6 +20,13 @@
 			remoteGlobalIDString = 8960B717307FD85100B54E93;
 			remoteInfo = MepoWidgetsExtension;
 		};
+		89D79C873080F75F007A9156 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 000000000000000000000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 000000000000000100000000;
+			remoteInfo = Mepo;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -189,6 +196,9 @@
 			);
 			buildRules = (
 			);
+			dependencies = (
+				89D79C883080F75F007A9156 /* PBXTargetDependency */,
+			);
 			fileSystemSynchronizedGroups = (
 				89D79C863080F75F007A9156 /* MepoTests */,
 			);
@@ -215,6 +225,7 @@
 					};
 					89D79C843080F75F007A9156 = {
 						CreatedOnToolsVersion = 27.1;
+						TestTargetID = 000000000000000100000000;
 					};
 				};
 			};
@@ -280,6 +291,11 @@
 			isa = PBXTargetDependency;
 			target = 8960B717307FD85100B54E93 /* MepoWidgetsExtension */;
 			targetProxy = 8960B728307FD85300B54E93 /* PBXContainerItemProxy */;
+		};
+		89D79C883080F75F007A9156 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 000000000000000100000000 /* Mepo */;
+			targetProxy = 89D79C873080F75F007A9156 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 

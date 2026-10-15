@@ -4,6 +4,7 @@ import FoundationModels
 import MapKit
 import CoreLocation
 import PhotosUI
+import UniformTypeIdentifiers
 #if canImport(UIKit)
 import UIKit
 #elseif canImport(AppKit)
@@ -441,6 +442,8 @@ struct MemoriesView: View {
         .padding(20)
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         .padding(.horizontal, 16)
+        .padding(.top, 16)
+        .padding(.bottom, 24)
     }
     
     private var mapContentView: some View {
@@ -838,7 +841,17 @@ struct MemoryMapCard: View {
 // MARK: - SettingsView
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
     @AppStorage("appTheme") private var appTheme = AppTheme.system
+    @Query private var allMemories: [MemoryItem]
+    @Query private var allReminders: [ReminderItem]
+    
+    @State private var showingExportSheet = false
+    @State private var showingFileImporter = false
+    @State private var importSummary: ImportSummary? = nil
+    @State private var showingImportSuccessAlert = false
+    @State private var importErrorMessage: String? = nil
+    @State private var showingImportErrorAlert = false
     
     var body: some View {
         NavigationStack {
@@ -850,6 +863,32 @@ struct SettingsView: View {
                         }
                     }
                     .pickerStyle(.segmented)
+                }
+                
+                Section(header: Text("Data & Backup")) {
+                    Button {
+                        showingExportSheet = true
+                    } label: {
+                        HStack {
+                            Label("Export & Backup All Data", systemImage: "arrow.down.doc")
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    
+                    Button {
+                        showingFileImporter = true
+                    } label: {
+                        HStack {
+                            Label("Import & Restore Backup", systemImage: "square.and.arrow.down")
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
                 }
                 
                 Section(header: Text("Features")) {
@@ -897,6 +936,55 @@ struct SettingsView: View {
                     }
                 }
             }
+            .sheet(isPresented: $showingExportSheet) {
+                FullDataExportSheet(memories: allMemories, reminders: allReminders)
+            }
+            .fileImporter(
+                isPresented: $showingFileImporter,
+                allowedContentTypes: [.json],
+                allowsMultipleSelection: false
+            ) { result in
+                handleFileImport(result: result)
+            }
+            .alert("Backup Restored", isPresented: $showingImportSuccessAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                if let s = importSummary {
+                    Text("Successfully imported \(s.importedMemories) memories and \(s.importedReminders) reminders.\(s.updatedMemories + s.updatedReminders > 0 ? " Updated \(s.updatedMemories + s.updatedReminders) existing items." : "")")
+                } else {
+                    Text("Your backup data has been successfully restored.")
+                }
+            }
+            .alert("Import Failed", isPresented: $showingImportErrorAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(importErrorMessage ?? "Unable to read or parse the selected backup file.")
+            }
+        }
+    }
+    
+    private func handleFileImport(result: Result<[URL], Error>) {
+        do {
+            guard let selectedURL = try result.get().first else { return }
+            let summary = try FullDataBackupImporter.importJSON(from: selectedURL, modelContext: modelContext)
+            
+            let freshMemories = (try? modelContext.fetch(FetchDescriptor<MemoryItem>())) ?? []
+            let freshReminders = (try? modelContext.fetch(FetchDescriptor<ReminderItem>())) ?? []
+            SpotlightManager.shared.indexMemories(freshMemories)
+            for r in freshReminders {
+                SpotlightManager.shared.indexReminder(r)
+                if !r.isCompleted, let due = r.dueDate, due > Date() {
+                    Task {
+                        await NotificationManager.shared.scheduleNotification(for: r)
+                    }
+                }
+            }
+            
+            self.importSummary = summary
+            self.showingImportSuccessAlert = true
+        } catch {
+            self.importErrorMessage = error.localizedDescription
+            self.showingImportErrorAlert = true
         }
     }
 }

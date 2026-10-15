@@ -32,10 +32,53 @@ struct AddQuickReminderIntent: AppIntent {
             try context.save()
             
             await NotificationManager.shared.scheduleNotification(for: reminder)
+            SpotlightManager.shared.indexReminder(reminder)
             
             return .result(dialog: "Added '\(reminder.title)' to Mepo.")
         } catch {
             return .result(dialog: "Could not save reminder.")
+        }
+    }
+}
+
+// MARK: - Log Memory Intent
+struct LogMemoryIntent: AppIntent {
+    static var title: LocalizedStringResource = "Log Memory"
+    static var description = IntentDescription("Log a new memory, place, or note in Mepo.")
+    
+    @Parameter(title: "Title")
+    var title: String
+    
+    @Parameter(title: "Category", default: "Notes")
+    var category: String
+    
+    @Parameter(title: "Details", default: "")
+    var details: String
+    
+    static var parameterSummary: some ParameterSummary {
+        Summary("Log memory \(\.$title) in Mepo")
+    }
+    
+    @MainActor
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        do {
+            let container = try ModelContainer(for: MemoryItem.self, ReminderItem.self)
+            let context = ModelContext(container)
+            
+            let memory = MemoryItem(
+                title: title.trimmingCharacters(in: .whitespacesAndNewlines),
+                details: details.trimmingCharacters(in: .whitespacesAndNewlines),
+                category: category.isEmpty ? "Notes" : category
+            )
+            
+            context.insert(memory)
+            try context.save()
+            
+            SpotlightManager.shared.indexMemory(memory)
+            
+            return .result(dialog: "Logged '\(memory.title)' in Mepo.")
+        } catch {
+            return .result(dialog: "Could not save memory.")
         }
     }
 }
@@ -91,6 +134,16 @@ struct MepoShortcuts: AppShortcutsProvider {
             ],
             shortTitle: "Add Reminder",
             systemImageName: "checklist"
+        )
+        AppShortcut(
+            intent: LogMemoryIntent(),
+            phrases: [
+                "Log a memory in \(.applicationName)",
+                "New memory in \(.applicationName)",
+                "Record memory in \(.applicationName)"
+            ],
+            shortTitle: "Log Memory",
+            systemImageName: "sparkles"
         )
     }
 }

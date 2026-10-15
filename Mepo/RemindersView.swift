@@ -155,7 +155,7 @@ struct RemindersView: View {
                     remindersListView
                         .frame(height: halfHeight)
                 }
-                .padding(.top, 4)
+                .padding(.top, 12)
             } else {
                 // Landscape Pose: Side by Side (Equal 50/50 horizontal split)
                 HStack(alignment: .top, spacing: isPad ? 20 : 24) {
@@ -167,6 +167,7 @@ struct RemindersView: View {
                         .padding(.vertical, 8)
                 }
                 .padding(.horizontal, 16)
+                .padding(.top, 12)
             }
         }
     }
@@ -175,6 +176,7 @@ struct RemindersView: View {
     private var remindersListView: some View {
         VStack(spacing: 0) {
             filterCapsulePicker
+                .padding(.top, 6)
             
             Group {
                 if filteredReminders.isEmpty {
@@ -201,7 +203,7 @@ struct RemindersView: View {
                             }
                         }
                         .padding(.horizontal, 16)
-                        .padding(.top, 4)
+                        .padding(.top, 12)
                         .padding(.bottom, 24)
                     }
                 }
@@ -236,6 +238,7 @@ struct RemindersView: View {
     private var compactView: some View {
         VStack(spacing: 0) {
             filterCapsulePicker
+                .padding(.top, 6)
             
             Group {
                 if filteredReminders.isEmpty {
@@ -253,7 +256,7 @@ struct RemindersView: View {
                             }
                         }
                         .padding(.horizontal)
-                        .padding(.top, 8)
+                        .padding(.top, 12)
                         .padding(.bottom, 24)
                     }
                 }
@@ -333,6 +336,7 @@ struct RemindersView: View {
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         .padding(.horizontal, 16)
         .padding(.top, 16)
+        .padding(.bottom, 24)
     }
     
     private var emptyStateTitle: String {

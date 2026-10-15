@@ -1,7 +1,7 @@
 import Foundation
 import WidgetKit
 
-struct WidgetReminder: Codable, Identifiable {
+nonisolated struct WidgetReminder: Codable, Identifiable, Sendable {
     var id: String
     var title: String
     var isCompleted: Bool
@@ -10,7 +10,7 @@ struct WidgetReminder: Codable, Identifiable {
     var locationName: String?
 }
 
-struct WidgetMemory: Codable, Identifiable {
+nonisolated struct WidgetMemory: Codable, Identifiable, Sendable {
     var id: String
     var title: String
     var category: String
@@ -21,7 +21,7 @@ struct WidgetMemory: Codable, Identifiable {
     var dateText: String?
 }
 
-struct WidgetPayload: Codable {
+nonisolated struct WidgetPayload: Codable, Sendable {
     var reminders: [WidgetReminder]
     var latestMemory: WidgetMemory?
     var recentMemories: [WidgetMemory] = []
@@ -45,53 +45,61 @@ final class MepoWidgetStore {
         }
     }
     
+    static let defaultMemories: [WidgetMemory] = [
+        WidgetMemory(
+            id: "m1",
+            title: "Dinner at Circolo Popolare",
+            category: "Food & Drink",
+            locationName: "Fitzrovia, London",
+            ratingScore: 5,
+            ratingSubject: "Truffle Pasta",
+            details: "Incredible atmosphere and decadent carbonara served in cheese wheel.",
+            dateText: "Yesterday"
+        ),
+        WidgetMemory(
+            id: "m2",
+            title: "Flat White & Pastry",
+            category: "Coffee & Cafes",
+            locationName: "Monmouth Coffee, Covent Garden",
+            ratingScore: 5,
+            ratingSubject: "Espresso Roast",
+            details: "Best pour-over and flat white in the city. Always busy.",
+            dateText: "3 days ago"
+        ),
+        WidgetMemory(
+            id: "m3",
+            title: "Weekend Book Hunting",
+            category: "Books & Arts",
+            locationName: "Daunt Books, Marylebone",
+            ratingScore: 4,
+            ratingSubject: "Travel Section",
+            details: "Beautiful oak galleries and skylights filled with travel literature.",
+            dateText: "Last week"
+        )
+    ]
+    
     func load() -> WidgetPayload {
-        guard let data = defaults?.data(forKey: payloadKey),
-              let payload = try? JSONDecoder().decode(WidgetPayload.self, from: data) else {
-            let defaultMemories = [
-                WidgetMemory(
-                    id: "m1",
-                    title: "Dinner at Circolo Popolare",
-                    category: "Food & Drink",
-                    locationName: "Fitzrovia, London",
-                    ratingScore: 5,
-                    ratingSubject: "Truffle Pasta",
-                    details: "Incredible atmosphere and decadent carbonara served in cheese wheel.",
-                    dateText: "Yesterday"
-                ),
-                WidgetMemory(
-                    id: "m2",
-                    title: "Flat White & Pastry",
-                    category: "Coffee & Cafes",
-                    locationName: "Monmouth Coffee, Covent Garden",
-                    ratingScore: 5,
-                    ratingSubject: "Espresso Roast",
-                    details: "Best pour-over and flat white in the city. Always busy.",
-                    dateText: "3 days ago"
-                ),
-                WidgetMemory(
-                    id: "m3",
-                    title: "Weekend Book Hunting",
-                    category: "Books & Arts",
-                    locationName: "Daunt Books, Marylebone",
-                    ratingScore: 4,
-                    ratingSubject: "Travel Section",
-                    details: "Beautiful oak galleries and skylights filled with travel literature.",
-                    dateText: "Last week"
-                )
-            ]
-            
+        if let data = defaults?.data(forKey: payloadKey),
+           let payload = try? JSONDecoder().decode(WidgetPayload.self, from: data) {
+            if payload.latestMemory != nil || !payload.recentMemories.isEmpty {
+                return payload
+            }
             return WidgetPayload(
-                reminders: [
-                    WidgetReminder(id: "1", title: "Pick up fresh coffee beans", isCompleted: false, isImportant: true, dueText: "Today 10:00 AM", locationName: "Monmouth Coffee"),
-                    WidgetReminder(id: "2", title: "Try seasonal sourdough pastry", isCompleted: false, isImportant: false, dueText: "Tomorrow", locationName: "Gail's Bakery"),
-                    WidgetReminder(id: "3", title: "Review weekend notes", isCompleted: true, isImportant: false, dueText: nil, locationName: nil)
-                ],
-                latestMemory: defaultMemories.first,
-                recentMemories: defaultMemories
+                reminders: payload.reminders,
+                latestMemory: Self.defaultMemories.first,
+                recentMemories: Self.defaultMemories
             )
         }
-        return payload
+        
+        return WidgetPayload(
+            reminders: [
+                WidgetReminder(id: "1", title: "Pick up fresh coffee beans", isCompleted: false, isImportant: true, dueText: "Today 10:00 AM", locationName: "Monmouth Coffee"),
+                WidgetReminder(id: "2", title: "Try seasonal sourdough pastry", isCompleted: false, isImportant: false, dueText: "Tomorrow", locationName: "Gail's Bakery"),
+                WidgetReminder(id: "3", title: "Review weekend notes", isCompleted: true, isImportant: false, dueText: nil, locationName: nil)
+            ],
+            latestMemory: Self.defaultMemories.first,
+            recentMemories: Self.defaultMemories
+        )
     }
     
     func toggleReminder(id: String) {
@@ -103,5 +111,10 @@ final class MepoWidgetStore {
                 WidgetCenter.shared.reloadAllTimelines()
             }
         }
+    }
+    
+    func resetToDefaults() {
+        defaults?.removeObject(forKey: payloadKey)
+        WidgetCenter.shared.reloadAllTimelines()
     }
 }

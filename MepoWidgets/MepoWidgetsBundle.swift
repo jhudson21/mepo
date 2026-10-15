@@ -7,5 +7,8 @@ struct MepoWidgetsBundle: WidgetBundle {
         RemindersWidget()
         MemoriesWidget()
         QuickAddWidget()
+        MepoNewMemoryControl()
+        MepoVoiceReminderControl()
+        MepoNewReminderControl()
     }
 }

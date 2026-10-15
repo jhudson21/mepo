@@ -30,18 +30,29 @@ final class QuickActionManager {
     
     var activeAction: MepoQuickAction? = nil
     
-    @discardableResult
-    func handle(shortcutItem: UIApplicationShortcutItem) -> Bool {
-        guard let action = MepoQuickAction(shortcutType: shortcutItem.type) else { return false }
-        activeAction = action
-        return true
-    }
+    private init() {}
     
     @discardableResult
     func handle(url: URL) -> Bool {
         guard url.scheme == "mepo" else { return false }
-        let targetHost = url.host ?? url.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        guard let action = MepoQuickAction(rawValue: targetHost) else { return false }
+        switch url.host {
+        case "new-memory":
+            activeAction = .newMemory
+            return true
+        case "new-reminder":
+            activeAction = .newReminder
+            return true
+        case "voice-reminder":
+            activeAction = .voiceReminder
+            return true
+        default:
+            return false
+        }
+    }
+    
+    @discardableResult
+    func handle(shortcutItem: UIApplicationShortcutItem) -> Bool {
+        guard let action = MepoQuickAction(shortcutType: shortcutItem.type) else { return false }
         activeAction = action
         return true
     }
@@ -49,6 +60,14 @@ final class QuickActionManager {
 
 // MARK: - App & Scene Delegates for Shortcut Items
 final class MepoAppDelegate: NSObject, UIApplicationDelegate {
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+    ) -> Bool {
+        NotificationManager.shared.setup()
+        return true
+    }
+
     func application(
         _ application: UIApplication,
         configurationForConnecting connectingSceneSession: UISceneSession,

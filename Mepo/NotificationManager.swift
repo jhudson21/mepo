@@ -1,13 +1,49 @@
 import Foundation
 import UserNotifications
 import CoreLocation
+import SwiftData
 
 // MARK: - Notification Manager
 @MainActor
-final class NotificationManager {
+final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     static let shared = NotificationManager()
     
-    private init() {}
+    static let categoryReminder = "MEPO_REMINDER_CATEGORY"
+    static let actionMarkDone = "MEPO_ACTION_MARK_DONE"
+    static let actionSnooze15 = "MEPO_ACTION_SNOOZE_15"
+    
+    private override init() {
+        super.init()
+    }
+    
+    func setup() {
+        let center = UNUserNotificationCenter.current()
+        center.delegate = self
+        registerCategories()
+    }
+    
+    private func registerCategories() {
+        let markDoneAction = UNNotificationAction(
+            identifier: Self.actionMarkDone,
+            title: "Mark as Done",
+            options: []
+        )
+        
+        let snoozeAction = UNNotificationAction(
+            identifier: Self.actionSnooze15,
+            title: "Snooze 15 Min",
+            options: []
+        )
+        
+        let reminderCategory = UNNotificationCategory(
+            identifier: Self.categoryReminder,
+            actions: [markDoneAction, snoozeAction],
+            intentIdentifiers: [],
+            options: [.customDismissAction]
+        )
+        
+        UNUserNotificationCenter.current().setNotificationCategories([reminderCategory])
+    }
     
     @discardableResult
     func requestAuthorization() async -> Bool {
@@ -15,9 +51,14 @@ final class NotificationManager {
             let center = UNUserNotificationCenter.current()
             let settings = await center.notificationSettings()
             if settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional {
+                registerCategories()
                 return true
             }
-            return try await center.requestAuthorization(options: [.alert, .sound, .badge])
+            let granted = try await center.requestAuthorization(options: [.alert, .sound, .badge])
+            if granted {
+                registerCategories()
+            }
+            return granted
         } catch {
             return false
         }
@@ -51,6 +92,8 @@ final class NotificationManager {
             if let loc = reminder.locationName { bodyParts.append("📍 \(loc)") }
             content.body = bodyParts.joined(separator: " • ")
             content.sound = .default
+            content.categoryIdentifier = Self.categoryReminder
+            content.userInfo = ["reminderId": baseId]
             
             let calendar = Calendar.current
             var trigger: UNNotificationTrigger?
@@ -95,6 +138,8 @@ final class NotificationManager {
                 arrivalContent.title = reminder.isImportant ? "📍 ❗ \(reminder.title)" : "📍 \(reminder.title)"
                 arrivalContent.body = reminder.notes.isEmpty ? "Arrived near \(locName)" : "\(locName): \(reminder.notes)"
                 arrivalContent.sound = .default
+                arrivalContent.categoryIdentifier = Self.categoryReminder
+                arrivalContent.userInfo = ["reminderId": baseId]
                 
                 let arrivalRequest = UNNotificationRequest(identifier: "\(baseId)_location_arrival", content: arrivalContent, trigger: arrivalTrigger)
                 try? await center.add(arrivalRequest)
@@ -111,6 +156,8 @@ final class NotificationManager {
                 departureContent.title = reminder.isImportant ? "🚶 ❗ \(reminder.title)" : "🚶 \(reminder.title)"
                 departureContent.body = reminder.notes.isEmpty ? "Leaving \(locName)" : "\(locName): \(reminder.notes)"
                 departureContent.sound = .default
+                departureContent.categoryIdentifier = Self.categoryReminder
+                departureContent.userInfo = ["reminderId": baseId]
                 
                 let departureRequest = UNNotificationRequest(identifier: "\(baseId)_location_departure", content: departureContent, trigger: departureTrigger)
                 try? await center.add(departureRequest)
@@ -127,5 +174,57 @@ final class NotificationManager {
             "\(baseId)_location_arrival",
             "\(baseId)_location_departure"
         ])
+    }
+    
+    // MARK: - UNUserNotificationCenterDelegate
+    nonisolated func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound, .badge])
+    }
+    
+    nonisolated func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        let reminderIdString = response.notification.request.content.userInfo["reminderId"] as? String
+        let actionIdentifier = response.actionIdentifier
+        
+        Task { @MainActor in
+            if let reminderIdString,
+               let uuid = UUID(uuidString: reminderIdString) {
+                handleNotificationAction(actionIdentifier: actionIdentifier, reminderId: uuid)
+            }
+            completionHandler()
+        }
+    }
+    
+    private func handleNotificationAction(actionIdentifier: String, reminderId: UUID) {
+        let context = sharedModelContainer.mainContext
+        let descriptor = FetchDescriptor<ReminderItem>(predicate: #Predicate { $0.id == reminderId })
+        
+        guard let reminder = try? context.fetch(descriptor).first else { return }
+        
+        switch actionIdentifier {
+        case Self.actionMarkDone:
+            reminder.isCompleted = true
+            try? context.save()
+            cancelNotification(for: reminder)
+            MepoWidgetStore.shared.toggleReminder(id: reminder.id.uuidString)
+            
+        case Self.actionSnooze15:
+            let snoozedDate = Date().addingTimeInterval(15 * 60)
+            reminder.dueDate = snoozedDate
+            try? context.save()
+            Task {
+                await scheduleNotification(for: reminder)
+            }
+            
+        default:
+            break
+        }
     }
 }
