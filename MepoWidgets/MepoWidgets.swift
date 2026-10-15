@@ -37,7 +37,6 @@ struct RemindersTimelineProvider: TimelineProvider {
     func getTimeline(in context: Context, completion: @escaping (Timeline<RemindersEntry>) -> Void) {
         let payload = MepoWidgetStore.shared.load()
         let entry = RemindersEntry(date: Date(), reminders: payload.reminders)
-        // Refresh every 30 minutes or when reloaded by app
         let nextUpdate = Calendar.current.date(byAdding: .minute, value: 30, to: Date()) ?? Date()
         let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
         completion(timeline)
@@ -54,8 +53,12 @@ struct RemindersWidgetView: View {
     @Environment(\.widgetFamily) var family
     var entry: RemindersEntry
     
+    var pendingReminders: [WidgetReminder] {
+        entry.reminders.filter { !$0.isCompleted }
+    }
+    
     var pendingCount: Int {
-        entry.reminders.filter { !$0.isCompleted }.count
+        pendingReminders.count
     }
     
     var body: some View {
@@ -71,119 +74,160 @@ struct RemindersWidgetView: View {
     
     // MARK: - Small View
     @ViewBuilder private var smallRemindersView: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Image(systemName: "checklist")
-                    .foregroundColor(.blue)
-                Text("Reminders")
-                    .font(.caption.bold())
+        VStack(alignment: .leading, spacing: 6) {
+            // Header
+            HStack(alignment: .center) {
+                HStack(spacing: 5) {
+                    Image(systemName: "checklist")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.blue)
+                    Text("REMINDERS")
+                        .font(.system(size: 10, weight: .heavy, design: .rounded))
+                        .foregroundColor(.blue)
+                }
                 Spacer()
                 Text("\(pendingCount)")
-                    .font(.caption2.bold())
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(.blue)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .background(Color.blue.opacity(0.2))
+                    .background(Color.blue.opacity(0.15))
                     .clipShape(Capsule())
             }
             
-            Spacer()
+            Spacer(minLength: 2)
             
-            if let firstPending = entry.reminders.first(where: { !$0.isCompleted }) ?? entry.reminders.first {
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack(spacing: 8) {
-                        Button(intent: ToggleWidgetReminderIntent(id: firstPending.id)) {
-                            Image(systemName: firstPending.isCompleted ? "checkmark.circle.fill" : "circle")
-                                .font(.title3)
-                                .foregroundColor(firstPending.isCompleted ? .green : .secondary)
+            if let firstItem = entry.reminders.first(where: { !$0.isCompleted }) ?? entry.reminders.first {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(alignment: .top, spacing: 8) {
+                        Button(intent: ToggleWidgetReminderIntent(id: firstItem.id)) {
+                            Image(systemName: firstItem.isCompleted ? "checkmark.circle.fill" : "circle")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundColor(firstItem.isCompleted ? .green : .secondary)
+                                .frame(width: 20, height: 20)
                         }
                         .buttonStyle(.plain)
                         
-                        Text(firstPending.title)
-                            .font(.subheadline.weight(.medium))
-                            .lineLimit(2)
-                            .strikethrough(firstPending.isCompleted)
-                            .foregroundColor(firstPending.isCompleted ? .secondary : .primary)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(firstItem.title)
+                                .font(.system(size: 13, weight: .semibold))
+                                .lineLimit(2)
+                                .strikethrough(firstItem.isCompleted)
+                                .foregroundColor(firstItem.isCompleted ? .secondary : .primary)
+                            
+                            if let loc = firstItem.locationName {
+                                HStack(spacing: 3) {
+                                    Image(systemName: "mappin")
+                                    Text(loc)
+                                }
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundColor(.purple)
+                                .lineLimit(1)
+                            } else if let due = firstItem.dueText {
+                                HStack(spacing: 3) {
+                                    Image(systemName: "clock")
+                                    Text(due)
+                                }
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundColor(.blue)
+                                .lineLimit(1)
+                            }
+                        }
                     }
                     
-                    if let loc = firstPending.locationName {
-                        HStack(spacing: 3) {
-                            Image(systemName: "mappin")
-                            Text(loc)
+                    // Preview of next pending item if available
+                    if let secondItem = entry.reminders.filter({ !$0.isCompleted && $0.id != firstItem.id }).first {
+                        Divider()
+                            .padding(.vertical, 2)
+                        
+                        HStack(spacing: 6) {
+                            Circle()
+                                .stroke(Color.secondary.opacity(0.4), lineWidth: 1.5)
+                                .frame(width: 10, height: 10)
+                            Text(secondItem.title)
+                                .font(.system(size: 11))
+                                .foregroundColor(.secondary)
+                                .lineLimit(1)
                         }
-                        .font(.caption2)
-                        .foregroundColor(.purple)
-                        .lineLimit(1)
-                    } else if let due = firstPending.dueText {
-                        HStack(spacing: 3) {
-                            Image(systemName: "clock")
-                            Text(due)
-                        }
-                        .font(.caption2)
-                        .foregroundColor(.blue)
-                        .lineLimit(1)
                     }
                 }
             } else {
-                Text("All tasks done! 🎉")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                VStack(spacing: 4) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.title2)
+                        .foregroundColor(.green)
+                    Text("All done!")
+                        .font(.caption.bold())
+                    Text("No pending tasks")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             
-            Spacer()
+            Spacer(minLength: 2)
         }
     }
     
     // MARK: - Medium View
     @ViewBuilder private var mediumRemindersView: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
+            // Header
+            HStack(alignment: .center) {
                 HStack(spacing: 6) {
                     Image(systemName: "checklist")
+                        .font(.system(size: 13, weight: .bold))
                         .foregroundColor(.blue)
-                    Text("Day to Day")
-                        .font(.subheadline.bold())
+                    Text("DAY TO DAY")
+                        .font(.system(size: 11, weight: .heavy, design: .rounded))
+                        .foregroundColor(.blue)
                 }
                 
                 Spacer()
                 
                 Text("\(pendingCount) pending")
-                    .font(.caption2.bold())
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(.blue)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
                     .background(Color.blue.opacity(0.15))
-                    .foregroundColor(.blue)
                     .clipShape(Capsule())
             }
             
             Divider()
             
-            let displayReminders = Array(entry.reminders.prefix(3))
-            if displayReminders.isEmpty {
+            let displayItems = Array(entry.reminders.prefix(3))
+            if displayItems.isEmpty {
                 Spacer()
-                Text("No reminders for today.")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                HStack {
+                    Spacer()
+                    Text("No reminders scheduled.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Spacer()
+                }
                 Spacer()
             } else {
-                VStack(spacing: 6) {
-                    ForEach(displayReminders) { item in
-                        HStack(spacing: 8) {
+                VStack(spacing: 8) {
+                    ForEach(displayItems) { item in
+                        HStack(alignment: .center, spacing: 8) {
                             Button(intent: ToggleWidgetReminderIntent(id: item.id)) {
                                 Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
-                                    .font(.body)
+                                    .font(.system(size: 16, weight: .medium))
                                     .foregroundColor(item.isCompleted ? .green : .secondary)
+                                    .frame(width: 20, height: 20)
                             }
                             .buttonStyle(.plain)
                             
                             Text(item.title)
-                                .font(.caption.weight(.medium))
+                                .font(.system(size: 13, weight: .medium))
                                 .lineLimit(1)
                                 .strikethrough(item.isCompleted)
                                 .foregroundColor(item.isCompleted ? .secondary : .primary)
                             
                             if item.isImportant {
                                 Image(systemName: "exclamationmark")
-                                    .font(.caption2.bold())
+                                    .font(.system(size: 10, weight: .heavy))
                                     .foregroundColor(.orange)
                             }
                             
@@ -194,42 +238,62 @@ struct RemindersWidgetView: View {
                                     Image(systemName: "mappin")
                                     Text(loc)
                                 }
-                                .font(.caption2)
+                                .font(.system(size: 10, weight: .medium))
                                 .foregroundColor(.purple)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.purple.opacity(0.12))
+                                .clipShape(Capsule())
                                 .lineLimit(1)
                             } else if let due = item.dueText {
-                                Text(due)
-                                    .font(.caption2)
-                                    .foregroundColor(.secondary)
+                                HStack(spacing: 2) {
+                                    Image(systemName: "clock")
+                                    Text(due)
+                                }
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundColor(.blue)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.blue.opacity(0.12))
+                                .clipShape(Capsule())
+                                .lineLimit(1)
                             }
                         }
                     }
                 }
             }
+            
+            Spacer(minLength: 0)
         }
     }
     
     // MARK: - Lock Screen Accessory
     @ViewBuilder private var accessoryRectangularView: some View {
-        if let first = entry.reminders.first(where: { !$0.isCompleted }) {
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 4) {
-                    Image(systemName: "checklist")
-                    Text("Mepo • \(pendingCount) left")
-                        .font(.caption2.bold())
-                }
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 4) {
+                Image(systemName: "checklist")
+                Text("Reminders (\(pendingCount))")
+                    .font(.caption2.bold())
+            }
+            if let first = entry.reminders.first(where: { !$0.isCompleted }) ?? entry.reminders.first {
                 Text(first.title)
                     .font(.headline)
                     .lineLimit(1)
                 if let loc = first.locationName {
-                    Text(loc)
+                    Text("📍 \(loc)")
                         .font(.caption2)
                         .foregroundColor(.secondary)
+                        .lineLimit(1)
+                } else if let due = first.dueText {
+                    Text("⏰ \(due)")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
                 }
+            } else {
+                Text("All tasks completed")
+                    .font(.caption)
             }
-        } else {
-            Text("All tasks done! 🎉")
-                .font(.headline)
         }
     }
 }
@@ -244,7 +308,7 @@ struct RemindersWidget: Widget {
                 .containerBackground(.fill.tertiary, for: .widget)
         }
         .configurationDisplayName("Day to Day Reminders")
-        .description("View and check off your top tasks directly from your Home Screen.")
+        .description("View and check off pending tasks directly from your home screen.")
         .supportedFamilies([.systemSmall, .systemMedium, .accessoryRectangular])
     }
 }
@@ -299,17 +363,19 @@ struct MemoriesWidgetView: View {
     @ViewBuilder private var smallMemoriesView: some View {
         if let mem = entry.memory {
             VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    HStack(spacing: 4) {
+                // Top Row: Category badge & Star rating
+                HStack(alignment: .center) {
+                    HStack(spacing: 3) {
                         Image(systemName: "sparkles")
+                            .font(.system(size: 9))
                             .foregroundColor(.purple)
-                        Text(mem.category)
-                            .font(.caption2.bold())
+                        Text(mem.category.uppercased())
+                            .font(.system(size: 9, weight: .heavy, design: .rounded))
+                            .foregroundColor(.purple)
                     }
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .background(Color.purple.opacity(0.15))
-                    .foregroundColor(.purple)
+                    .background(Color.purple.opacity(0.14))
                     .clipShape(Capsule())
                     
                     Spacer()
@@ -318,25 +384,29 @@ struct MemoriesWidgetView: View {
                         HStack(spacing: 1) {
                             ForEach(1...5, id: \.self) { s in
                                 Image(systemName: s <= score ? "star.fill" : "star")
-                                    .font(.system(size: 8))
+                                    .font(.system(size: 7))
                                     .foregroundColor(s <= score ? .yellow : .gray.opacity(0.3))
                             }
                         }
                     }
                 }
                 
-                Spacer()
+                Spacer(minLength: 4)
                 
+                // Memory Title
                 Text(mem.title)
-                    .font(.subheadline.bold())
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(.primary)
                     .lineLimit(2)
                 
+                // Location
                 if let loc = mem.locationName {
                     HStack(spacing: 3) {
                         Image(systemName: "mappin.and.ellipse")
+                            .font(.system(size: 9))
                         Text(loc)
+                            .font(.system(size: 10, weight: .medium))
                     }
-                    .font(.caption2)
                     .foregroundColor(.secondary)
                     .lineLimit(1)
                 }
@@ -349,23 +419,25 @@ struct MemoriesWidgetView: View {
     // MARK: - Medium Memories View
     @ViewBuilder private var mediumMemoriesView: some View {
         if let mem = entry.memory {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
+            VStack(alignment: .leading, spacing: 6) {
+                // Header
+                HStack(alignment: .center) {
                     HStack(spacing: 4) {
                         Image(systemName: "sparkles")
+                            .font(.system(size: 10))
                             .foregroundColor(.purple)
-                        Text(mem.category)
-                            .font(.caption2.bold())
+                        Text(mem.category.uppercased())
+                            .font(.system(size: 10, weight: .heavy, design: .rounded))
+                            .foregroundColor(.purple)
                     }
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
-                    .background(Color.purple.opacity(0.15))
-                    .foregroundColor(.purple)
+                    .background(Color.purple.opacity(0.14))
                     .clipShape(Capsule())
                     
                     if let date = mem.dateText {
                         Text(date)
-                            .font(.caption2)
+                            .font(.system(size: 11))
                             .foregroundColor(.secondary)
                     }
                     
@@ -375,13 +447,13 @@ struct MemoriesWidgetView: View {
                         HStack(spacing: 3) {
                             if let sub = mem.ratingSubject {
                                 Text(sub)
-                                    .font(.caption2.weight(.medium))
+                                    .font(.system(size: 10, weight: .medium))
                                     .foregroundColor(.secondary)
                             }
                             HStack(spacing: 1) {
                                 ForEach(1...5, id: \.self) { s in
                                     Image(systemName: s <= score ? "star.fill" : "star")
-                                        .font(.system(size: 9))
+                                        .font(.system(size: 8))
                                         .foregroundColor(s <= score ? .yellow : .gray.opacity(0.3))
                                 }
                             }
@@ -389,39 +461,47 @@ struct MemoriesWidgetView: View {
                     }
                 }
                 
+                // Title and Location
                 VStack(alignment: .leading, spacing: 2) {
                     Text(mem.title)
-                        .font(.headline)
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.primary)
                         .lineLimit(1)
                     
                     if let loc = mem.locationName {
                         HStack(spacing: 3) {
                             Image(systemName: "mappin.and.ellipse")
+                                .font(.system(size: 10))
                             Text(loc)
+                                .font(.system(size: 11))
                         }
-                        .font(.caption)
                         .foregroundColor(.secondary)
                         .lineLimit(1)
                     }
                 }
                 
+                // Details Quote
                 if !mem.details.isEmpty {
                     Text(mem.details)
-                        .font(.caption)
-                        .foregroundColor(.primary.opacity(0.85))
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
                         .lineLimit(2)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.primary.opacity(0.04))
+                        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
                 }
                 
-                Spacer()
+                Spacer(minLength: 0)
                 
                 if entry.recentMemories.count > 1 {
                     HStack {
                         Text("+\(entry.recentMemories.count - 1) other saved places")
-                            .font(.caption2.bold())
+                            .font(.system(size: 10, weight: .bold))
                             .foregroundColor(.purple)
                         Spacer()
                         Image(systemName: "arrow.right")
-                            .font(.caption2)
+                            .font(.system(size: 10, weight: .bold))
                             .foregroundColor(.secondary)
                     }
                 }
@@ -436,28 +516,30 @@ struct MemoriesWidgetView: View {
         if let hero = entry.memory {
             VStack(alignment: .leading, spacing: 10) {
                 // Header
-                HStack {
-                    HStack(spacing: 4) {
+                HStack(alignment: .center) {
+                    HStack(spacing: 5) {
                         Image(systemName: "sparkles")
+                            .font(.system(size: 12, weight: .bold))
                             .foregroundColor(.purple)
                         Text("MEPO SHOWCASE")
-                            .font(.caption.bold())
+                            .font(.system(size: 11, weight: .heavy, design: .rounded))
                             .foregroundColor(.purple)
                     }
                     Spacer()
                     Text("\(entry.recentMemories.count) Places")
-                        .font(.caption2.bold())
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.secondary.opacity(0.15))
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Color.secondary.opacity(0.12))
                         .clipShape(Capsule())
                 }
                 
                 // Hero Memory Card
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
-                        Text(hero.category)
-                            .font(.caption2.bold())
+                        Text(hero.category.uppercased())
+                            .font(.system(size: 9, weight: .heavy, design: .rounded))
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
                             .background(Color.purple.opacity(0.2))
@@ -470,7 +552,7 @@ struct MemoriesWidgetView: View {
                             HStack(spacing: 1) {
                                 ForEach(1...5, id: \.self) { s in
                                     Image(systemName: s <= score ? "star.fill" : "star")
-                                        .font(.system(size: 9))
+                                        .font(.system(size: 8))
                                         .foregroundColor(s <= score ? .yellow : .gray.opacity(0.3))
                                 }
                             }
@@ -478,22 +560,24 @@ struct MemoriesWidgetView: View {
                     }
                     
                     Text(hero.title)
-                        .font(.headline)
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundColor(.primary)
                         .lineLimit(1)
                     
                     if let loc = hero.locationName {
                         HStack(spacing: 3) {
                             Image(systemName: "mappin.and.ellipse")
+                                .font(.system(size: 10))
                             Text(loc)
+                                .font(.system(size: 11))
                         }
-                        .font(.caption)
                         .foregroundColor(.secondary)
                         .lineLimit(1)
                     }
                     
                     if !hero.details.isEmpty {
                         Text(hero.details)
-                            .font(.caption)
+                            .font(.system(size: 11))
                             .foregroundColor(.secondary)
                             .lineLimit(2)
                     }
@@ -504,24 +588,30 @@ struct MemoriesWidgetView: View {
                 
                 // Recent Highlights List
                 if entry.recentMemories.count > 1 {
-                    Text("Recent Highlights")
-                        .font(.caption.bold())
+                    Text("RECENT HIGHLIGHTS")
+                        .font(.system(size: 10, weight: .heavy, design: .rounded))
                         .foregroundColor(.secondary)
                     
                     VStack(spacing: 6) {
                         ForEach(Array(entry.recentMemories.dropFirst().prefix(3))) { item in
                             HStack(spacing: 8) {
-                                Image(systemName: "mappin.circle.fill")
-                                    .font(.subheadline)
-                                    .foregroundColor(.purple)
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.purple.opacity(0.14))
+                                        .frame(width: 26, height: 26)
+                                    Image(systemName: "mappin")
+                                        .font(.system(size: 11, weight: .semibold))
+                                        .foregroundColor(.purple)
+                                }
                                 
                                 VStack(alignment: .leading, spacing: 1) {
                                     Text(item.title)
-                                        .font(.subheadline.bold())
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundColor(.primary)
                                         .lineLimit(1)
                                     if let loc = item.locationName {
                                         Text(loc)
-                                            .font(.caption2)
+                                            .font(.system(size: 10))
                                             .foregroundColor(.secondary)
                                             .lineLimit(1)
                                     }
@@ -539,13 +629,13 @@ struct MemoriesWidgetView: View {
                                     }
                                 }
                             }
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 4)
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 2)
                         }
                     }
                 }
                 
-                Spacer()
+                Spacer(minLength: 0)
             }
         } else {
             emptyView
@@ -628,6 +718,97 @@ struct QuickAddTimelineProvider: TimelineProvider {
     }
 }
 
+// MARK: - Reusable Quick Add Tile for Medium Widget
+private struct QuickAddActionCard: View {
+    let title: String
+    let subtitle: String
+    let icon: String
+    let tintColor: Color
+    let destination: String
+    
+    var body: some View {
+        Link(destination: URL(string: destination)!) {
+            VStack(spacing: 6) {
+                // Fixed-size circular icon badge for pixel-perfect vertical alignment across all cards
+                ZStack {
+                    Circle()
+                        .fill(tintColor.opacity(0.15))
+                        .frame(width: 36, height: 36)
+                    Image(systemName: icon)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(tintColor)
+                }
+                
+                VStack(spacing: 2) {
+                    Text(title)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(.primary)
+                        .lineLimit(1)
+                    Text(subtitle)
+                        .font(.system(size: 10, weight: .regular))
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(.vertical, 8)
+            .padding(.horizontal, 4)
+            .background(Color.primary.opacity(0.04))
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+            )
+        }
+    }
+}
+
+// MARK: - Reusable Quick Add Row for Small Widget
+private struct QuickAddActionRow: View {
+    let title: String
+    let icon: String
+    let tintColor: Color
+    let destination: String
+    
+    var body: some View {
+        Link(destination: URL(string: destination)!) {
+            HStack(spacing: 8) {
+                ZStack {
+                    Circle()
+                        .fill(tintColor.opacity(0.16))
+                        .frame(width: 28, height: 28)
+                    Image(systemName: icon)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(tintColor)
+                }
+                
+                Text(title)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.primary)
+                    .lineLimit(1)
+                
+                Spacer()
+                
+                Image(systemName: "plus")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(tintColor)
+                    .frame(width: 20, height: 20)
+                    .background(tintColor.opacity(0.12))
+                    .clipShape(Circle())
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .frame(maxWidth: .infinity)
+            .background(Color.primary.opacity(0.04))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+            )
+        }
+    }
+}
+
 // MARK: - Quick Add Widget View
 struct QuickAddWidgetView: View {
     @Environment(\.widgetFamily) var family
@@ -650,117 +831,86 @@ struct QuickAddWidgetView: View {
 
     // MARK: - Small Family View
     @ViewBuilder private var smallQuickAddView: some View {
-        VStack(spacing: 8) {
-            HStack {
-                Image(systemName: "sparkles")
-                    .foregroundColor(.purple)
-                Text("QUICK CAPTURE")
-                    .font(.system(size: 10, weight: .heavy, design: .rounded))
-                    .foregroundColor(.secondary)
+        VStack(alignment: .leading, spacing: 6) {
+            // Header
+            HStack(alignment: .center) {
+                HStack(spacing: 5) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.purple)
+                    Text("QUICK ADD")
+                        .font(.system(size: 10, weight: .heavy, design: .rounded))
+                        .foregroundColor(.purple)
+                }
                 Spacer()
             }
+            
+            Spacer(minLength: 2)
 
-            Link(destination: URL(string: "mepo://new-memory")!) {
-                HStack(spacing: 6) {
-                    Image(systemName: "sparkles")
-                    Text("Memory")
-                        .font(.subheadline.bold())
-                }
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(
-                    LinearGradient(colors: [Color.purple, Color.indigo], startPoint: .topLeading, endPoint: .bottomTrailing)
+            VStack(spacing: 6) {
+                QuickAddActionRow(
+                    title: "New Memory",
+                    icon: "sparkles",
+                    tintColor: .purple,
+                    destination: "mepo://new-memory"
                 )
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            }
-
-            Link(destination: URL(string: "mepo://new-reminder")!) {
-                HStack(spacing: 6) {
-                    Image(systemName: "checklist")
-                    Text("Reminder")
-                        .font(.subheadline.bold())
-                }
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(
-                    LinearGradient(colors: [Color.blue, Color.cyan], startPoint: .topLeading, endPoint: .bottomTrailing)
+                
+                QuickAddActionRow(
+                    title: "New Reminder",
+                    icon: "checklist",
+                    tintColor: .blue,
+                    destination: "mepo://new-reminder"
                 )
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
+            
+            Spacer(minLength: 2)
         }
     }
 
     // MARK: - Medium Family View
     @ViewBuilder private var mediumQuickAddView: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
+        VStack(alignment: .leading, spacing: 8) {
+            // Header
+            HStack(alignment: .center) {
                 HStack(spacing: 5) {
                     Image(systemName: "sparkles")
+                        .font(.system(size: 12, weight: .bold))
                         .foregroundColor(.purple)
-                    Text("MEPO QUICK ACTIONS")
-                        .font(.caption2.bold())
+                    Text("QUICK ACTIONS")
+                        .font(.system(size: 11, weight: .heavy, design: .rounded))
                         .foregroundColor(.purple)
                 }
                 Spacer()
                 Text("One-Tap Capture")
-                    .font(.caption2)
+                    .font(.system(size: 10, weight: .medium))
                     .foregroundColor(.secondary)
             }
 
+            // Cards Row
             HStack(spacing: 8) {
-                Link(destination: URL(string: "mepo://new-memory")!) {
-                    VStack(spacing: 6) {
-                        Image(systemName: "sparkles")
-                            .font(.title2)
-                        Text("New Memory")
-                            .font(.subheadline.bold())
-                        Text("Places & ratings")
-                            .font(.caption2)
-                            .opacity(0.8)
-                    }
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(
-                        LinearGradient(colors: [Color.purple, Color.indigo], startPoint: .topLeading, endPoint: .bottomTrailing)
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                }
+                QuickAddActionCard(
+                    title: "Memory",
+                    subtitle: "Places & notes",
+                    icon: "sparkles",
+                    tintColor: .purple,
+                    destination: "mepo://new-memory"
+                )
 
-                Link(destination: URL(string: "mepo://new-reminder")!) {
-                    VStack(spacing: 6) {
-                        Image(systemName: "checklist")
-                            .font(.title2)
-                        Text("New Reminder")
-                            .font(.subheadline.bold())
-                        Text("Tasks & alerts")
-                            .font(.caption2)
-                            .opacity(0.8)
-                    }
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(
-                        LinearGradient(colors: [Color.blue, Color.cyan], startPoint: .topLeading, endPoint: .bottomTrailing)
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                }
+                QuickAddActionCard(
+                    title: "Reminder",
+                    subtitle: "Tasks & alerts",
+                    icon: "checklist",
+                    tintColor: .blue,
+                    destination: "mepo://new-reminder"
+                )
 
-                Link(destination: URL(string: "mepo://voice-reminder")!) {
-                    VStack(spacing: 6) {
-                        Image(systemName: "mic.fill")
-                            .font(.title2)
-                        Text("Dictate")
-                            .font(.subheadline.bold())
-                        Text("Voice note")
-                            .font(.caption2)
-                            .opacity(0.8)
-                    }
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(
-                        LinearGradient(colors: [Color.orange, Color.red.opacity(0.85)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                }
+                QuickAddActionCard(
+                    title: "Dictate",
+                    subtitle: "Voice capture",
+                    icon: "mic.fill",
+                    tintColor: .orange,
+                    destination: "mepo://voice-reminder"
+                )
             }
         }
     }
@@ -772,9 +922,9 @@ struct QuickAddWidgetView: View {
                 AccessoryWidgetBackground()
                 VStack(spacing: 1) {
                     Image(systemName: "plus")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(.system(size: 13, weight: .bold))
                     Image(systemName: "sparkles")
-                        .font(.system(size: 12))
+                        .font(.system(size: 11))
                 }
             }
         }
