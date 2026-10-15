@@ -15,6 +15,12 @@
 	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Mepo uses your location to discover nearby memories, tag saved places, and provide geofence reminder alerts.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Mepo uses the microphone for dictating reminders and quick voice capture.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Mepo uses speech recognition to convert your voice into text reminders and tasks.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Mepo saves exported memory cards to your photo library.</string>
 	<key>UIApplicationShortcutItems</key>
