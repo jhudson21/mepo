@@ -28,6 +28,7 @@ struct ContentView: View {
         TabView(selection: $selectedTab) {
             Tab("Memories", systemImage: "sparkles", value: 0) {
                 MemoriesView()
+                    .id(selectedTab == 0)
             }
             
             Tab("Day to Day", systemImage: "checklist", value: 1) {
@@ -166,7 +167,7 @@ struct MemoriesView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Query(sort: \MemoryItem.createdAt, order: .reverse) private var memories: [MemoryItem]
     
-    @State private var displayMode: MemoriesDisplayMode = .list
+    @AppStorage("memoriesDisplayMode") private var displayMode: MemoriesDisplayMode = .list
     @State private var selectedMapMemory: MemoryItem? = nil
     @State private var selectedMemoryID: UUID? = nil
     @State private var mapCameraPosition: MapCameraPosition = .userLocation(fallback: .automatic)
@@ -255,12 +256,8 @@ struct MemoriesView: View {
             .toolbar {
                 #if os(iOS)
                 ToolbarItem(placement: .topBarLeading) {
-                    HStack(spacing: 8) {
-                        Button(action: { showingSettingsSheet = true }) {
-                            Image(systemName: "gear")
-                        }
-                        Text("Memories")
-                            .font(.title2.weight(.bold))
+                    Button(action: { showingSettingsSheet = true }) {
+                        Image(systemName: "gear")
                     }
                 }
                 if horizontalSizeClass != .regular {
