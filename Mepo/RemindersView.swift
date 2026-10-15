@@ -91,8 +91,10 @@ struct RemindersView: View {
             .navigationTitle("Day to Day")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.large)
-            #endif
+            .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search reminders...")
+            #else
             .searchable(text: $searchText, prompt: "Search reminders...")
+            #endif
             .toolbar {
                 #if os(iOS)
                 ToolbarItem(placement: .topBarLeading) {

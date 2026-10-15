@@ -248,8 +248,10 @@ struct MemoriesView: View {
             .navigationTitle("Memories")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.large)
-            #endif
+            .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search memories...")
+            #else
             .searchable(text: $searchText, prompt: "Search memories...")
+            #endif
             .toolbar {
                 #if os(iOS)
                 ToolbarItem(placement: .topBarLeading) {
@@ -259,12 +261,38 @@ struct MemoriesView: View {
                 }
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     if horizontalSizeClass != .regular {
-                        Picker("View", selection: $displayMode.animation()) {
-                            Image(systemName: "rectangle.grid.1x2").tag(MemoriesDisplayMode.list)
-                            Image(systemName: "map").tag(MemoriesDisplayMode.map)
+                        HStack(spacing: 0) {
+                            Button {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    displayMode = .list
+                                }
+                            } label: {
+                                Image(systemName: "rectangle.grid.1x2")
+                                    .font(.caption.bold())
+                                    .foregroundColor(displayMode == .list ? .white : .primary)
+                                    .frame(width: 32, height: 28)
+                                    .background(displayMode == .list ? Color.accentColor : Color.clear)
+                                    .clipShape(Capsule())
+                            }
+                            .buttonStyle(.plain)
+                            
+                            Button {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    displayMode = .map
+                                }
+                            } label: {
+                                Image(systemName: "map")
+                                    .font(.caption.bold())
+                                    .foregroundColor(displayMode == .map ? .white : .primary)
+                                    .frame(width: 32, height: 28)
+                                    .background(displayMode == .map ? Color.accentColor : Color.clear)
+                                    .clipShape(Capsule())
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .pickerStyle(.segmented)
-                        .frame(width: 80)
+                        .padding(2)
+                        .background(Color.primary.opacity(0.1))
+                        .clipShape(Capsule())
                     }
                     
                     Button(action: { showingAddSheet = true }) {
@@ -280,12 +308,38 @@ struct MemoriesView: View {
                 }
                 ToolbarItemGroup(placement: .primaryAction) {
                     if horizontalSizeClass != .regular {
-                        Picker("View", selection: $displayMode.animation()) {
-                            Image(systemName: "rectangle.grid.1x2").tag(MemoriesDisplayMode.list)
-                            Image(systemName: "map").tag(MemoriesDisplayMode.map)
+                        HStack(spacing: 0) {
+                            Button {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    displayMode = .list
+                                }
+                            } label: {
+                                Image(systemName: "rectangle.grid.1x2")
+                                    .font(.caption.bold())
+                                    .foregroundColor(displayMode == .list ? .white : .primary)
+                                    .frame(width: 32, height: 28)
+                                    .background(displayMode == .list ? Color.accentColor : Color.clear)
+                                    .clipShape(Capsule())
+                            }
+                            .buttonStyle(.plain)
+                            
+                            Button {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    displayMode = .map
+                                }
+                            } label: {
+                                Image(systemName: "map")
+                                    .font(.caption.bold())
+                                    .foregroundColor(displayMode == .map ? .white : .primary)
+                                    .frame(width: 32, height: 28)
+                                    .background(displayMode == .map ? Color.accentColor : Color.clear)
+                                    .clipShape(Capsule())
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .pickerStyle(.segmented)
-                        .frame(width: 80)
+                        .padding(2)
+                        .background(Color.primary.opacity(0.1))
+                        .clipShape(Capsule())
                     }
                     Button(action: { showingAddSheet = true }) {
                         Image(systemName: "plus")
