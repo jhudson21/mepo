@@ -260,7 +260,7 @@ struct MemoriesView: View {
                     }
                 }
                 if horizontalSizeClass != .regular {
-                    ToolbarItem(placement: .topBarTrailing) {
+                    ToolbarItem(placement: .principal) {
                         Picker("View", selection: $displayMode.animation()) {
                             Image(systemName: "rectangle.grid.1x2").tag(MemoriesDisplayMode.list)
                             Image(systemName: "map").tag(MemoriesDisplayMode.map)
@@ -282,7 +282,7 @@ struct MemoriesView: View {
                     }
                 }
                 if horizontalSizeClass != .regular {
-                    ToolbarItem(placement: .primaryAction) {
+                    ToolbarItem(placement: .principal) {
                         Picker("View", selection: $displayMode.animation()) {
                             Image(systemName: "rectangle.grid.1x2").tag(MemoriesDisplayMode.list)
                             Image(systemName: "map").tag(MemoriesDisplayMode.map)
