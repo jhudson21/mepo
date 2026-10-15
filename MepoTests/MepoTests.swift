@@ -322,25 +322,47 @@ import SwiftData
         #expect(totalMems.count == 1)
     }
 
-    // MARK: - 9. Sample Data Loader Tests
-    @Test @MainActor func sampleDataLoaderPopulation() throws {
+    // MARK: - 9. Sample Data Loader & Start Fresh Tests
+    @Test @MainActor func sampleDataLoaderPopulationAndDeduplication() throws {
         let schema = Schema([MemoryItem.self, ReminderItem.self])
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [config])
         let context = container.mainContext
         
-        SampleDataLoader.loadSampleData(into: context)
+        // Add a personal custom memory and reminder
+        let personalMemory = MemoryItem(title: "My Custom Favorite Place", category: "Personal")
+        let personalReminder = ReminderItem(title: "My Personal Custom Task")
+        context.insert(personalMemory)
+        context.insert(personalReminder)
+        try context.save()
         
-        let mems = try context.fetch(FetchDescriptor<MemoryItem>())
-        #expect(mems.count == 4)
-        #expect(mems.contains { $0.title == "Circolo Popolare" })
-        #expect(mems.contains { $0.title == "Monmouth Coffee Company" })
-        #expect(mems.contains { $0.title == "Daunt Books" })
-        #expect(mems.contains { $0.title == "Tate Modern & River Walk" })
+        // First load: 4 memories and 4 reminders added
+        let firstResult = SampleDataLoader.loadSampleData(into: context)
+        #expect(firstResult.memoriesAdded == 4)
+        #expect(firstResult.remindersAdded == 4)
         
-        let rems = try context.fetch(FetchDescriptor<ReminderItem>())
-        #expect(rems.count == 4)
-        #expect(rems.contains { $0.isImportant && $0.locationName != nil })
-        #expect(rems.contains { $0.isCompleted })
+        let memsAfterFirst = try context.fetch(FetchDescriptor<MemoryItem>())
+        #expect(memsAfterFirst.count == 5) // 1 personal + 4 sample
+        
+        // Second load: should detect existing titles and add 0 duplicates!
+        let secondResult = SampleDataLoader.loadSampleData(into: context)
+        #expect(secondResult.memoriesAdded == 0)
+        #expect(secondResult.remindersAdded == 0)
+        
+        let memsAfterSecond = try context.fetch(FetchDescriptor<MemoryItem>())
+        #expect(memsAfterSecond.count == 5) // Still exactly 5, no duplicate cards!
+        
+        // Start Fresh (clearSampleData): should remove only the 4 sample memories & reminders
+        let clearResult = SampleDataLoader.clearSampleData(from: context)
+        #expect(clearResult.memoriesRemoved == 4)
+        #expect(clearResult.remindersRemoved == 4)
+        
+        let remainingMemories = try context.fetch(FetchDescriptor<MemoryItem>())
+        #expect(remainingMemories.count == 1)
+        #expect(remainingMemories.first?.title == "My Custom Favorite Place")
+        
+        let remainingReminders = try context.fetch(FetchDescriptor<ReminderItem>())
+        #expect(remainingReminders.count == 1)
+        #expect(remainingReminders.first?.title == "My Personal Custom Task")
     }
 }

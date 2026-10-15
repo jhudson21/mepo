@@ -862,6 +862,8 @@ struct SettingsView: View {
     @State private var importErrorMessage: String? = nil
     @State private var showingImportErrorAlert = false
     @State private var showingSampleDataAlert = false
+    @State private var sampleDataAlertMessage = ""
+    @State private var showingClearSampleDataAlert = false
     @State private var showingWelcomeTourSheet = false
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
     
@@ -903,12 +905,30 @@ struct SettingsView: View {
                     }
                     
                     Button {
-                        SampleDataLoader.loadSampleData(into: modelContext)
+                        let result = SampleDataLoader.loadSampleData(into: modelContext)
+                        if result.memoriesAdded == 0 && result.remindersAdded == 0 {
+                            sampleDataAlertMessage = "Sample data is already present. No duplicate cards were added."
+                        } else {
+                            sampleDataAlertMessage = "Added \(result.memoriesAdded) sample memories and \(result.remindersAdded) sample reminders. Widgets and search have been updated."
+                        }
                         showingSampleDataAlert = true
                     } label: {
                         HStack {
                             Label("Load Curated Sample Data", systemImage: "sparkles")
                                 .foregroundColor(.purple)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    
+                    Button(role: .destructive) {
+                        showingClearSampleDataAlert = true
+                    } label: {
+                        HStack {
+                            Label("Start Fresh (Remove Sample Data)", systemImage: "trash")
+                                .foregroundColor(.red)
                             Spacer()
                             Image(systemName: "chevron.right")
                                 .font(.caption)
@@ -1001,10 +1021,20 @@ struct SettingsView: View {
             .sheet(isPresented: $showingWelcomeTourSheet) {
                 WelcomeOnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)
             }
-            .alert("Sample Data Loaded", isPresented: $showingSampleDataAlert) {
+            .alert("Sample Data", isPresented: $showingSampleDataAlert) {
                 Button("OK", role: .cancel) { }
             } message: {
-                Text("Sample memories and reminders have been loaded. Widgets and search indexes have been updated.")
+                Text(sampleDataAlertMessage)
+            }
+            .alert("Start Fresh?", isPresented: $showingClearSampleDataAlert) {
+                Button("Cancel", role: .cancel) { }
+                Button("Remove Sample Data", role: .destructive) {
+                    let result = SampleDataLoader.clearSampleData(from: modelContext)
+                    sampleDataAlertMessage = "Removed \(result.memoriesRemoved) sample memories and \(result.remindersRemoved) sample reminders. Your custom items were kept untouched."
+                    showingSampleDataAlert = true
+                }
+            } message: {
+                Text("This will remove all curated sample memories and reminders, leaving any personal items you created completely safe.")
             }
         }
     }

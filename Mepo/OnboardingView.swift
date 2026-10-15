@@ -5,7 +5,28 @@ import MapKit
 // MARK: - Sample Data Loader
 @MainActor
 struct SampleDataLoader {
-    static func loadSampleData(into modelContext: ModelContext) {
+    static let sampleMemoryTitles: Set<String> = [
+        "Circolo Popolare",
+        "Monmouth Coffee Company",
+        "Daunt Books",
+        "Tate Modern & River Walk"
+    ]
+    
+    static let sampleReminderTitles: Set<String> = [
+        "Pick up freshly roasted beans at Monmouth",
+        "Review weekend travel itinerary notes",
+        "Return architecture book to Daunt Books",
+        "Reserve dinner table for Friday evening"
+    ]
+    
+    @discardableResult
+    static func loadSampleData(into modelContext: ModelContext) -> (memoriesAdded: Int, remindersAdded: Int) {
+        let existingMemories = (try? modelContext.fetch(FetchDescriptor<MemoryItem>())) ?? []
+        let existingReminders = (try? modelContext.fetch(FetchDescriptor<ReminderItem>())) ?? []
+        
+        let existingMemTitles = Set(existingMemories.map { $0.title })
+        let existingRemTitles = Set(existingReminders.map { $0.title })
+        
         // Sample Memories
         let circolo = MemoryItem(
             title: "Circolo Popolare",
@@ -63,9 +84,13 @@ struct SampleDataLoader {
             createdAt: Date.now.addingTimeInterval(-86400 * 12)
         )
         
-        let memories = [circolo, monmouth, daunt, tate]
-        for memory in memories {
-            modelContext.insert(memory)
+        let sampleMemories = [circolo, monmouth, daunt, tate]
+        var memsAdded = 0
+        for memory in sampleMemories {
+            if !existingMemTitles.contains(memory.title) {
+                modelContext.insert(memory)
+                memsAdded += 1
+            }
         }
         
         // Sample Reminders
@@ -116,15 +141,51 @@ struct SampleDataLoader {
             completedAt: Date.now.addingTimeInterval(-3600 * 3)
         )
         
-        let reminders = [reminder1, reminder2, reminder3, reminder4]
-        for reminder in reminders {
-            modelContext.insert(reminder)
+        let sampleReminders = [reminder1, reminder2, reminder3, reminder4]
+        var remsAdded = 0
+        for reminder in sampleReminders {
+            if !existingRemTitles.contains(reminder.title) {
+                modelContext.insert(reminder)
+                remsAdded += 1
+            }
         }
         
         try? modelContext.save()
+        syncSystemIntegrations(modelContext: modelContext)
+        return (memsAdded, remsAdded)
+    }
+    
+    @discardableResult
+    static func clearSampleData(from modelContext: ModelContext) -> (memoriesRemoved: Int, remindersRemoved: Int) {
+        let existingMemories = (try? modelContext.fetch(FetchDescriptor<MemoryItem>())) ?? []
+        let existingReminders = (try? modelContext.fetch(FetchDescriptor<ReminderItem>())) ?? []
         
-        // Update Widgets
-        let widgetReminders = reminders.map { r in
+        var memsRemoved = 0
+        for memory in existingMemories where sampleMemoryTitles.contains(memory.title) {
+            SpotlightManager.shared.deindexMemory(id: memory.id)
+            modelContext.delete(memory)
+            memsRemoved += 1
+        }
+        
+        var remsRemoved = 0
+        for reminder in existingReminders where sampleReminderTitles.contains(reminder.title) {
+            SpotlightManager.shared.deindexReminder(id: reminder.id)
+            NotificationManager.shared.cancelNotification(for: reminder)
+            modelContext.delete(reminder)
+            remsRemoved += 1
+        }
+        
+        try? modelContext.save()
+        syncSystemIntegrations(modelContext: modelContext)
+        return (memsRemoved, remsRemoved)
+    }
+    
+    static func syncSystemIntegrations(modelContext: ModelContext) {
+        let currentMemories = (try? modelContext.fetch(FetchDescriptor<MemoryItem>())) ?? []
+        let currentReminders = (try? modelContext.fetch(FetchDescriptor<ReminderItem>())) ?? []
+        
+        let calendar = Calendar.current
+        let widgetReminders = currentReminders.prefix(5).map { r in
             var dueText: String? = nil
             if let due = r.dueDate {
                 if calendar.isDateInToday(due) {
@@ -145,7 +206,7 @@ struct SampleDataLoader {
             )
         }
         
-        let widgetMemories = memories.map { m in
+        let widgetMemories = currentMemories.prefix(5).map { m in
             WidgetMemory(
                 id: m.id.uuidString,
                 title: m.title,
@@ -159,14 +220,13 @@ struct SampleDataLoader {
         }
         
         MepoWidgetStore.shared.save(
-            reminders: widgetReminders,
+            reminders: Array(widgetReminders),
             latestMemory: widgetMemories.first,
-            recentMemories: widgetMemories
+            recentMemories: Array(widgetMemories)
         )
         
-        // Update Spotlight & Notifications
-        SpotlightManager.shared.indexMemories(memories)
-        for r in reminders {
+        SpotlightManager.shared.indexMemories(currentMemories)
+        for r in currentReminders {
             SpotlightManager.shared.indexReminder(r)
             if !r.isCompleted, let due = r.dueDate, due > .now {
                 Task {
@@ -261,6 +321,7 @@ struct WelcomeOnboardingView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                     
                     Button {
+                        SampleDataLoader.clearSampleData(from: modelContext)
                         hasCompletedOnboarding = true
                         dismiss()
                     } label: {
