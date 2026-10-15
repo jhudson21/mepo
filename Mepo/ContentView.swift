@@ -160,6 +160,54 @@ func categoryIcon(for category: String) -> String {
     }
 }
 
+// MARK: - Single Glass View Mode Toggle
+struct SingleGlassViewModeToggle: View {
+    @Binding var displayMode: MemoriesDisplayMode
+    @Namespace private var toggleNamespace
+    
+    var body: some View {
+        HStack(spacing: 2) {
+            Button {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.72)) {
+                    displayMode = .list
+                }
+            } label: {
+                Image(systemName: "rectangle.grid.1x2")
+                    .font(.caption.bold())
+                    .foregroundColor(displayMode == .list ? .primary : .secondary)
+                    .frame(width: 32, height: 26)
+                    .background {
+                        if displayMode == .list {
+                            Capsule()
+                                .fill(Color.white.opacity(0.35))
+                                .matchedGeometryEffect(id: "activeSegmentIndicator", in: toggleNamespace)
+                        }
+                    }
+            }
+            .buttonStyle(.plain)
+            
+            Button {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.72)) {
+                    displayMode = .map
+                }
+            } label: {
+                Image(systemName: "map")
+                    .font(.caption.bold())
+                    .foregroundColor(displayMode == .map ? .primary : .secondary)
+                    .frame(width: 32, height: 26)
+                    .background {
+                        if displayMode == .map {
+                            Capsule()
+                                .fill(Color.white.opacity(0.35))
+                                .matchedGeometryEffect(id: "activeSegmentIndicator", in: toggleNamespace)
+                        }
+                    }
+            }
+            .buttonStyle(.plain)
+        }
+    }
+}
+
 // MARK: - App MemoriesView
 struct MemoriesView: View {
     @Environment(\.modelContext) private var modelContext
@@ -260,13 +308,8 @@ struct MemoriesView: View {
                     }
                 }
                 if horizontalSizeClass != .regular {
-                    ToolbarItem(placement: .principal) {
-                        Picker("View", selection: $displayMode.animation()) {
-                            Image(systemName: "rectangle.grid.1x2").tag(MemoriesDisplayMode.list)
-                            Image(systemName: "map").tag(MemoriesDisplayMode.map)
-                        }
-                        .pickerStyle(.segmented)
-                        .frame(width: 100)
+                    ToolbarItem(placement: .topBarTrailing) {
+                        SingleGlassViewModeToggle(displayMode: $displayMode)
                     }
                 }
                 ToolbarItem(placement: .primaryAction) {
@@ -282,13 +325,8 @@ struct MemoriesView: View {
                     }
                 }
                 if horizontalSizeClass != .regular {
-                    ToolbarItem(placement: .principal) {
-                        Picker("View", selection: $displayMode.animation()) {
-                            Image(systemName: "rectangle.grid.1x2").tag(MemoriesDisplayMode.list)
-                            Image(systemName: "map").tag(MemoriesDisplayMode.map)
-                        }
-                        .pickerStyle(.segmented)
-                        .frame(width: 100)
+                    ToolbarItem(placement: .primaryAction) {
+                        SingleGlassViewModeToggle(displayMode: $displayMode)
                     }
                 }
                 ToolbarItem(placement: .primaryAction) {
