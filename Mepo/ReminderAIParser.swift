@@ -129,7 +129,7 @@ enum ReminderAIParser {
             var recurrence: ReminderRecurrence = .none
             let lower = trimmed.lowercased()
             
-            if lower.contains("!urgent") || lower.contains("!important") || lower.contains("urgent") || lower.contains("asap") {
+            if lower.contains("!urgent") || lower.contains("!important") || lower.contains("urgent") || lower.contains("important") || lower.contains("asap") {
                 isImportant = true
                 title = title.replacingOccurrences(of: "!urgent", with: "", options: .caseInsensitive)
                              .replacingOccurrences(of: "!important", with: "", options: .caseInsensitive)

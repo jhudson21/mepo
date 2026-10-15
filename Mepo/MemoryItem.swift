@@ -30,6 +30,25 @@ class MemoryItem {
         self.ratings = ratings
         self.createdAt = createdAt
     }
+    
+    var shareFormattedText: String {
+        var text = "\(title) (\(category))\n"
+        if let loc = locationName {
+            text += "📍 \(loc)\n"
+        }
+        if !details.isEmpty {
+            text += "\n\(details)\n"
+        }
+        if !ratings.isEmpty {
+            text += "\nRatings:\n"
+            for r in ratings {
+                let stars = String(repeating: "★", count: r.score) + String(repeating: "☆", count: 5 - r.score)
+                text += "• \(r.subject): \(stars) (\(r.score)/5)\n"
+            }
+        }
+        text += "\n— Captured with Mepo"
+        return text
+    }
 }
 
 // Struct for SwiftData nested array support (must be Codable)

@@ -120,22 +120,7 @@ struct MemoryShareSheet: View {
     @State private var showSavedAlert: Bool = false
     
     var formattedText: String {
-        var text = "\(memory.title) (\(memory.category))\n"
-        if let loc = memory.locationName {
-            text += "📍 \(loc)\n"
-        }
-        if !memory.details.isEmpty {
-            text += "\n\(memory.details)\n"
-        }
-        if !memory.ratings.isEmpty {
-            text += "\nRatings:\n"
-            for r in memory.ratings {
-                let stars = String(repeating: "★", count: r.score) + String(repeating: "☆", count: 5 - r.score)
-                text += "• \(r.subject): \(stars) (\(r.score)/5)\n"
-            }
-        }
-        text += "\n— Captured with Mepo"
-        return text
+        memory.shareFormattedText
     }
     
     var body: some View {
@@ -143,45 +128,50 @@ struct MemoryShareSheet: View {
             ScrollView {
                 VStack(spacing: 20) {
                     // Visual Preview
-                    MemoryShareCardView(memory: memory)
-                        .padding(.vertical, 12)
-                        .shadow(color: .black.opacity(0.12), radius: 14, x: 0, y: 6)
-                    
-                    // Action Buttons
-                    VStack(spacing: 12) {
-                        if let rendered = renderedUIImage {
-                            ShareLink(
-                                item: Image(uiImage: rendered),
-                                preview: SharePreview(memory.title, image: Image(uiImage: rendered))
-                            ) {
-                                HStack {
-                                    Image(systemName: "photo.badge.arrow.down")
-                                    Text("Share Card Image")
-                                }
-                                .font(.headline)
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 14)
-                                .background(Color.purple)
-                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                            }
-                        }
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("PREVIEW")
+                            .font(.caption.bold())
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 4)
                         
-                        ShareLink(
-                            item: formattedText,
-                            subject: Text(memory.title),
-                            message: Text(formattedText)
-                        ) {
-                            HStack {
-                                Image(systemName: "square.and.arrow.up")
-                                Text("Share Text Summary")
+                        MemoryShareCardView(memory: memory)
+                            .shadow(color: Color.black.opacity(0.12), radius: 16, x: 0, y: 8)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                    }
+                    .padding(.top, 16)
+                    
+                    // Share Actions
+                    VStack(spacing: 12) {
+                        // Standard System Share Sheet (Image + Text)
+                        if let img = renderedUIImage {
+                            ShareLink(
+                                item: Image(uiImage: img),
+                                subject: Text(memory.title),
+                                message: Text(formattedText),
+                                preview: SharePreview(memory.title, image: Image(uiImage: img))
+                            ) {
+                                Label("Share Image & Details", systemImage: "square.and.arrow.up")
+                                    .font(.headline)
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 14)
+                                    .background(Color.purple)
+                                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                             }
-                            .font(.headline)
-                            .foregroundColor(.primary)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(Color.secondary.opacity(0.15))
-                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        } else {
+                            ShareLink(
+                                item: formattedText,
+                                subject: Text(memory.title),
+                                message: Text(formattedText)
+                            ) {
+                                Label("Share Memory Summary", systemImage: "square.and.arrow.up")
+                                    .font(.headline)
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 14)
+                                    .background(Color.purple)
+                                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            }
                         }
                         
                         HStack(spacing: 12) {
