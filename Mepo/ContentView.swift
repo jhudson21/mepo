@@ -168,12 +168,12 @@ struct SingleGlassViewModeToggle: View {
     var body: some View {
         HStack(spacing: 2) {
             Button {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.72)) {
+                withAnimation(.spring(response: 0.32, dampingFraction: 0.72)) {
                     displayMode = .list
                 }
             } label: {
                 Image(systemName: "rectangle.grid.1x2")
-                    .font(.caption.bold())
+                    .font(.caption.weight(.semibold))
                     .foregroundColor(displayMode == .list ? .primary : .secondary)
                     .frame(width: 32, height: 26)
                     .background {
@@ -187,12 +187,12 @@ struct SingleGlassViewModeToggle: View {
             .buttonStyle(.plain)
             
             Button {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.72)) {
+                withAnimation(.spring(response: 0.32, dampingFraction: 0.72)) {
                     displayMode = .map
                 }
             } label: {
                 Image(systemName: "map")
-                    .font(.caption.bold())
+                    .font(.caption.weight(.semibold))
                     .foregroundColor(displayMode == .map ? .primary : .secondary)
                     .frame(width: 32, height: 26)
                     .background {
@@ -205,6 +205,21 @@ struct SingleGlassViewModeToggle: View {
             }
             .buttonStyle(.plain)
         }
+        .padding(2)
+        .background(.ultraThinMaterial)
+        .clipShape(Capsule())
+        .overlay(
+            Capsule()
+                .strokeBorder(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.6), Color.white.opacity(0.18)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 0.75
+                )
+        )
+        .shadow(color: Color.black.opacity(0.08), radius: 3, x: 0, y: 1.5)
     }
 }
 
