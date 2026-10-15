@@ -160,61 +160,6 @@ func categoryIcon(for category: String) -> String {
     }
 }
 
-// MARK: - Single Glass View Mode Toggle (Matches Floating Tab Bar)
-struct SingleGlassViewModeToggle: View {
-    @Binding var displayMode: MemoriesDisplayMode
-    @Namespace private var toggleNamespace
-    
-    var body: some View {
-        HStack(spacing: 0) {
-            Button {
-                withAnimation(.spring(response: 0.32, dampingFraction: 0.75)) {
-                    displayMode = .list
-                }
-            } label: {
-                Image(systemName: "rectangle.grid.1x2")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(displayMode == .list ? .accentColor : .primary)
-                    .frame(width: 32, height: 28)
-                    .background {
-                        if displayMode == .list {
-                            Capsule()
-                                .fill(Color.white.opacity(0.36))
-                                .matchedGeometryEffect(id: "activeTabIndicator", in: toggleNamespace)
-                        }
-                    }
-            }
-            .buttonStyle(.plain)
-            
-            Button {
-                withAnimation(.spring(response: 0.32, dampingFraction: 0.75)) {
-                    displayMode = .map
-                }
-            } label: {
-                Image(systemName: "map")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(displayMode == .map ? .accentColor : .primary)
-                    .frame(width: 32, height: 28)
-                    .background {
-                        if displayMode == .map {
-                            Capsule()
-                                .fill(Color.white.opacity(0.36))
-                                .matchedGeometryEffect(id: "activeTabIndicator", in: toggleNamespace)
-                        }
-                    }
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(3)
-        .background(.ultraThinMaterial)
-        .clipShape(Capsule())
-        .overlay(
-            Capsule()
-                .strokeBorder(Color.white.opacity(0.5), lineWidth: 0.8)
-        )
-    }
-}
-
 // MARK: - App MemoriesView
 struct MemoriesView: View {
     @Environment(\.modelContext) private var modelContext
@@ -310,13 +255,22 @@ struct MemoriesView: View {
             .toolbar {
                 #if os(iOS)
                 ToolbarItem(placement: .topBarLeading) {
-                    Button(action: { showingSettingsSheet = true }) {
-                        Image(systemName: "gear")
+                    HStack(spacing: 8) {
+                        Button(action: { showingSettingsSheet = true }) {
+                            Image(systemName: "gear")
+                        }
+                        Text("Memories")
+                            .font(.title2.weight(.bold))
                     }
                 }
                 if horizontalSizeClass != .regular {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        SingleGlassViewModeToggle(displayMode: $displayMode)
+                    ToolbarItem(placement: .principal) {
+                        Picker("View", selection: $displayMode.animation()) {
+                            Image(systemName: "rectangle.grid.1x2").tag(MemoriesDisplayMode.list)
+                            Image(systemName: "map").tag(MemoriesDisplayMode.map)
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(width: 100)
                     }
                 }
                 ToolbarItem(placement: .primaryAction) {
@@ -332,8 +286,13 @@ struct MemoriesView: View {
                     }
                 }
                 if horizontalSizeClass != .regular {
-                    ToolbarItem(placement: .primaryAction) {
-                        SingleGlassViewModeToggle(displayMode: $displayMode)
+                    ToolbarItem(placement: .principal) {
+                        Picker("View", selection: $displayMode.animation()) {
+                            Image(systemName: "rectangle.grid.1x2").tag(MemoriesDisplayMode.list)
+                            Image(systemName: "map").tag(MemoriesDisplayMode.map)
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(width: 100)
                     }
                 }
                 ToolbarItem(placement: .primaryAction) {
